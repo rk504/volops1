@@ -10,7 +10,6 @@ interface Opportunity {
   description: string
   category: string
   commitment: string
-  distance: number
   image: string
   time: string
   day: string
@@ -52,7 +51,6 @@ export default function OpportunityList({ opportunities }: OpportunityListProps)
                     <Badge variant="secondary">{opportunity.category}</Badge>
                     <Badge variant="outline">{opportunity.commitment}</Badge>
                   </div>
-                  <span className="text-sm text-gray-500">{opportunity.distance.toFixed(1)} miles away</span>
                 </div>
               </div>
             </div>

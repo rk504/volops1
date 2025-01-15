@@ -77,9 +77,9 @@ export default function EmailSignup() {
     <div className="bg-white py-8">
       <div className="container mx-auto px-4">
         <div className="max-w-md mx-auto text-center">
-          <h2 className="text-2xl font-bold mb-4">Get NYC Volunteering Updates</h2>
+          <h2 className="text-2xl font-bold mb-4">Stay Updated</h2>
           <p className="text-gray-600 mb-6">
-            Get personalized volunteer opportunities in your inbox<br />
+            Get notified about NYC volunteer opportunities<br />
             (in a weekly newsletter, no spam).
           </p>
           <form onSubmit={handleSubmit} className="space-y-4">
