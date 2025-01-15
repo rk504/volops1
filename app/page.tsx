@@ -19,15 +19,11 @@ export default function Home() {
   const allOpportunities = getOpportunities()
   const [filters, setFilters] = useState({
     categories: new Set<string>(),
-    availability: new Set<string>(),
-    maxDistance: 100
+    availability: new Set<string>()
   })
 
   // Filter opportunities based on current filters
   const filteredOpportunities = allOpportunities.filter(opp => {
-    // Distance filter
-    if (opp.distance > filters.maxDistance) return false
-
     // Category filter
     if (filters.categories.size > 0 && !filters.categories.has(opp.category)) return false
 
@@ -61,10 +57,6 @@ export default function Home() {
     })
   }, [])
 
-  const updateDistanceFilter = useCallback((value: number) => {
-    setFilters(prev => ({ ...prev, maxDistance: value }))
-  }, [])
-
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -73,17 +65,18 @@ export default function Home() {
           filters={filters}
           onCategoryChange={(category, checked) => updateFilters('categories', category, checked)}
           onAvailabilityChange={(time, checked) => updateFilters('availability', time, checked)}
-          onDistanceChange={updateDistanceFilter}
         />
-        <main className="flex-1 flex">
-          <div className="flex-1 flex flex-col overflow-y-auto">
+        <main className="flex-1 flex overflow-y-auto">
+          <div className="flex-1 flex flex-col">
             <OpportunityList opportunities={filteredOpportunities} />
             <EmailSignup />
           </div>
-          <div className="w-1/4 h-[calc(100vh-8rem)] sticky top-8">
-            <Suspense fallback={<div className="w-full h-full flex items-center justify-center">Loading map...</div>}>
-              <Map opportunities={filteredOpportunities} />
-            </Suspense>
+          <div className="w-1/4 h-[calc(100vh-8rem)] mt-8 mr-6">
+            <div className="relative h-full">
+              <Suspense fallback={<div className="w-full h-full flex items-center justify-center">Loading map...</div>}>
+                <Map opportunities={filteredOpportunities} />
+              </Suspense>
+            </div>
           </div>
         </main>
       </div>
