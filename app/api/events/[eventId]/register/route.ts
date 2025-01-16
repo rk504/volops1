@@ -12,7 +12,7 @@ export async function POST(
     // First check if the event exists and has available spots
     const { data: event, error: eventError } = await supabase
       .from('events')
-      .select('id, max_participants, current_participants')
+      .select('*')
       .eq('id', eventId)
       .single()
 
@@ -21,7 +21,7 @@ export async function POST(
       return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
-    console.log('Found event:', event)
+    console.log('Found event:', JSON.stringify(event, null, 2))
 
     if (!event) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 })
@@ -31,16 +31,17 @@ export async function POST(
       return NextResponse.json({ error: 'Event is full' }, { status: 400 })
     }
 
-    // Update the event's participant count directly
-    const { data: updatedEvent, error: updateError } = await supabase
+    const newParticipantCount = event.current_participants + 1
+    console.log('Attempting to update participants from', event.current_participants, 'to', newParticipantCount)
+
+    // First do the update
+    const { error: updateError } = await supabase
       .from('events')
       .update({ 
-        current_participants: event.current_participants + 1 
+        current_participants: newParticipantCount,
+        updated_at: new Date().toISOString()
       })
       .eq('id', eventId)
-      .select()
-
-    console.log('Update result:', { updatedEvent, updateError })
 
     if (updateError) {
       console.error('Update error:', updateError)
@@ -50,10 +51,29 @@ export async function POST(
       )
     }
 
+    // Then fetch the updated event
+    const { data: updatedEvent, error: fetchError } = await supabase
+      .from('events')
+      .select('*')
+      .eq('id', eventId)
+      .single()
+
+    if (fetchError || !updatedEvent) {
+      console.error('Fetch error:', fetchError)
+      return NextResponse.json(
+        { error: 'Failed to verify registration' },
+        { status: 500 }
+      )
+    }
+
+    console.log('Successfully updated event:', JSON.stringify(updatedEvent, null, 2))
+
     return NextResponse.json(
       { 
         message: 'Successfully registered for event',
-        event: updatedEvent
+        event: updatedEvent,
+        previousCount: event.current_participants,
+        newCount: updatedEvent.current_participants
       },
       { status: 200 }
     )
