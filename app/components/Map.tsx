@@ -12,7 +12,7 @@ const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { 
 const Popup = dynamic(() => import('react-leaflet').then(mod => mod.Popup), { ssr: false })
 
 interface Opportunity {
-  id: number
+  id: string
   title: string
   organization: string
   latitude: number

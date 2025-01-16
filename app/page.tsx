@@ -1,13 +1,14 @@
 'use client'
 
 import { Suspense } from 'react'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import OpportunityList from './components/OpportunityList'
 import EmailSignup from './components/EmailSignup'
-import { getMockOpportunities } from '../lib/data'
+import { fetchOpportunities, Opportunity } from '../lib/data'
+import { supabase } from '@/lib/supabase'
 
 // Dynamically import the Map component with no SSR
 const Map = dynamic(() => import('./components/Map'), { 
@@ -16,11 +17,52 @@ const Map = dynamic(() => import('./components/Map'), {
 })
 
 export default function Home() {
-  const [opportunities] = useState(getMockOpportunities())
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([])
+  const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({
     categories: new Set<string>(),
     availability: new Set<string>()
   })
+
+  // Function to fetch opportunities data
+  const refreshOpportunities = useCallback(async () => {
+    try {
+      const data = await fetchOpportunities()
+      setOpportunities(data)
+    } catch (error) {
+      console.error('Error fetching opportunities:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  // Initial fetch and setup real-time subscription
+  useEffect(() => {
+    // Initial fetch
+    refreshOpportunities()
+
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('events-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'events'
+        },
+        (payload) => {
+          console.log('Real-time update:', payload)
+          refreshOpportunities()
+        }
+      )
+      .subscribe()
+
+    // Cleanup subscription
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [refreshOpportunities])
 
   // Filter opportunities based on current filters
   const filteredOpportunities = opportunities.filter(opp => {
@@ -57,6 +99,10 @@ export default function Home() {
     })
   }, [])
 
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading opportunities...</div>
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -70,7 +116,7 @@ export default function Home() {
           <div className="flex-1 flex flex-col">
             <OpportunityList 
               opportunities={filteredOpportunities} 
-              onRegistrationComplete={() => {}}
+              onRegistrationComplete={refreshOpportunities}
             />
             <EmailSignup />
           </div>

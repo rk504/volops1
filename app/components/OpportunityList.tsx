@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 
 interface Opportunity {
-  id: number
+  id: string
   title: string
   organization: string
   description: string
