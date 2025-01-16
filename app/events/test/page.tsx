@@ -16,6 +16,9 @@ export default function TestEventPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
+  // Update to use proper UUID
+  const TEST_USER_ID = '123e4567-e89b-12d3-a456-426614174000'
+
   useEffect(() => {
     fetchEvents()
     fetchUserRegistrations()
@@ -42,72 +45,68 @@ export default function TestEventPage() {
   }
 
   async function fetchUserRegistrations() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
     const { data, error } = await supabase
       .from('registrations')
       .select('event_id')
-      .eq('user_id', user.id)
+      .eq('user_id', TEST_USER_ID)
 
     if (error) {
       console.error('Error fetching registrations:', error)
       return
     }
 
-    setUserRegistrations(new Set(data.map((r: { event_id: string }) => r.event_id)))
+    setUserRegistrations(new Set(data?.map(r => r.event_id) || []))
   }
 
   async function handleRegistration(eventId: string) {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      alert('Please sign in to register')
-      return
-    }
+    try {
+      if (userRegistrations.has(eventId)) {
+        // Unregister
+        const { error } = await supabase
+          .from('registrations')
+          .delete()
+          .eq('user_id', TEST_USER_ID)
+          .eq('event_id', eventId)
 
-    if (userRegistrations.has(eventId)) {
-      // Unregister
-      const { error } = await supabase
-        .from('registrations')
-        .delete()
-        .match({ user_id: user.id, event_id: eventId })
-
-      if (error) {
-        console.error('Error unregistering:', error)
-        alert('Failed to unregister')
-        return
-      }
-
-      setUserRegistrations(prev => {
-        const next = new Set(prev)
-        next.delete(eventId)
-        return next
-      })
-    } else {
-      // Register
-      const { error } = await supabase
-        .from('registrations')
-        .insert([{ user_id: user.id, event_id: eventId }])
-
-      if (error) {
-        console.error('Error registering:', error)
-        if (error.message.includes('Event is full')) {
-          alert('This event is full')
-        } else {
-          alert('Failed to register')
+        if (error) {
+          console.error('Error unregistering:', error)
+          alert('Failed to unregister: ' + error.message)
+          return
         }
-        return
+
+        setUserRegistrations(prev => {
+          const next = new Set(prev)
+          next.delete(eventId)
+          return next
+        })
+      } else {
+        // Register
+        const { error } = await supabase
+          .from('registrations')
+          .insert([{ user_id: TEST_USER_ID, event_id: eventId }])
+
+        if (error) {
+          console.error('Error registering:', error)
+          alert('Failed to register: ' + error.message)
+          return
+        }
+
+        setUserRegistrations(prev => {
+          const next = new Set(prev)
+          next.add(eventId)
+          return next
+        })
       }
 
-      setUserRegistrations(prev => {
-        const next = new Set(prev)
-        next.add(eventId)
-        return next
-      })
+      // Add a small delay to allow the trigger to complete
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Refresh events to update participant count
+      await fetchEvents()
+    } catch (error) {
+      console.error('Registration error:', error)
+      alert('An error occurred during registration')
     }
-
-    // Refresh events to update participant count
-    fetchEvents()
   }
 
   if (loading) {

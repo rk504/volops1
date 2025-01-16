@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import L from 'leaflet'
+import { LatLngExpression, LatLngTuple } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
 const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false })
@@ -16,6 +17,10 @@ interface Opportunity {
   organization: string
   latitude: number
   longitude: number
+  time: string
+  day: string
+  max_participants: number
+  current_participants: number
 }
 
 interface MapProps {
@@ -33,6 +38,7 @@ const customIcon = L.divIcon({
 
 export default function Map({ opportunities }: MapProps) {
   const [isClient, setIsClient] = useState(false)
+  const mapRef = useRef<L.Map | null>(null)
 
   useEffect(() => {
     setIsClient(true)
@@ -43,12 +49,12 @@ export default function Map({ opportunities }: MapProps) {
     if (!opportunities || opportunities.length === 0) {
       return {
         bounds: undefined,
-        center: [40.7128, -74.0060], // Default to NYC
+        center: [40.7128, -74.0060] as LatLngTuple, // Default to NYC
         zoom: 11
       }
     }
 
-    const points = opportunities.map(opp => [opp.latitude, opp.longitude])
+    const points = opportunities.map(opp => [opp.latitude, opp.longitude] as LatLngTuple)
     const bounds = L.latLngBounds(points)
     
     // Calculate center
@@ -59,6 +65,13 @@ export default function Map({ opportunities }: MapProps) {
 
     return { bounds, center, zoom }
   }, [opportunities])
+
+  // Update map bounds when opportunities change
+  useEffect(() => {
+    if (mapRef.current && bounds) {
+      mapRef.current.fitBounds(bounds)
+    }
+  }, [bounds])
 
   if (!isClient) return null
   if (!opportunities || !Array.isArray(opportunities)) return null
@@ -99,9 +112,9 @@ export default function Map({ opportunities }: MapProps) {
         }
       `}</style>
       <MapContainer
+        ref={(map) => { mapRef.current = map }}
         center={center}
         zoom={zoom}
-        bounds={bounds}
         style={{ height: '100%', width: '100%' }}
       >
         <TileLayer
@@ -115,9 +128,13 @@ export default function Map({ opportunities }: MapProps) {
             icon={customIcon}
           >
             <Popup>
-              <div>
+              <div className="space-y-2">
                 <h3 className="font-semibold">{opportunity.title}</h3>
                 <p className="text-sm">{opportunity.organization}</p>
+                <p className="text-sm text-gray-600">{opportunity.day}s at {opportunity.time}</p>
+                <p className="text-sm font-medium">
+                  {opportunity.current_participants}/{opportunity.max_participants} spots filled
+                </p>
               </div>
             </Popup>
           </Marker>

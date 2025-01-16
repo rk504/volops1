@@ -7,7 +7,7 @@ import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import OpportunityList from './components/OpportunityList'
 import EmailSignup from './components/EmailSignup'
-import { getOpportunities } from '../lib/data'
+import { getMockOpportunities } from '../lib/data'
 
 // Dynamically import the Map component with no SSR
 const Map = dynamic(() => import('./components/Map'), { 
@@ -16,14 +16,14 @@ const Map = dynamic(() => import('./components/Map'), {
 })
 
 export default function Home() {
-  const allOpportunities = getOpportunities()
+  const [opportunities] = useState(getMockOpportunities())
   const [filters, setFilters] = useState({
     categories: new Set<string>(),
     availability: new Set<string>()
   })
 
   // Filter opportunities based on current filters
-  const filteredOpportunities = allOpportunities.filter(opp => {
+  const filteredOpportunities = opportunities.filter(opp => {
     // Category filter
     if (filters.categories.size > 0 && !filters.categories.has(opp.category)) return false
 
@@ -68,7 +68,10 @@ export default function Home() {
         />
         <main className="flex-1 flex overflow-y-auto">
           <div className="flex-1 flex flex-col">
-            <OpportunityList opportunities={filteredOpportunities} />
+            <OpportunityList 
+              opportunities={filteredOpportunities} 
+              onRegistrationComplete={() => {}}
+            />
             <EmailSignup />
           </div>
           <div className="w-1/4 h-[calc(100vh-8rem)] mt-8 mr-6">
