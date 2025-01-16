@@ -5,7 +5,18 @@ import { createClient } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import type { Event } from '@/lib/types'
+
+interface Event {
+  id: string
+  title: string
+  description: string
+  location: string
+  date: string
+  max_participants: number
+  participant_count: number
+  created_at: string
+  updated_at: string
+}
 
 export default function TestEventPage() {
   const [events, setEvents] = useState<Event[]>([])
@@ -27,7 +38,7 @@ export default function TestEventPage() {
   async function fetchEvents() {
     try {
       const { data, error } = await supabase
-        .from('events')
+        .from('events_with_counts')
         .select('*')
         .order('date', { ascending: true })
 
@@ -132,9 +143,9 @@ export default function TestEventPage() {
                   </p>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary">
-                      {event.current_participants} / {event.max_participants} spots filled
+                      {event.participant_count} / {event.max_participants} spots filled
                     </Badge>
-                    {event.current_participants >= event.max_participants && (
+                    {event.participant_count >= event.max_participants && (
                       <Badge variant="destructive">Full</Badge>
                     )}
                   </div>
@@ -142,10 +153,7 @@ export default function TestEventPage() {
                 <Button
                   variant={userRegistrations.has(event.id) ? "destructive" : "default"}
                   onClick={() => handleRegistration(event.id)}
-                  disabled={
-                    !userRegistrations.has(event.id) && 
-                    event.current_participants >= event.max_participants
-                  }
+                  disabled={event.participant_count >= event.max_participants}
                 >
                   {userRegistrations.has(event.id) ? 'Unregister' : 'Register'}
                 </Button>

@@ -15,12 +15,19 @@ interface Opportunity {
   id: string
   title: string
   organization: string
+  description: string
+  category: string
+  commitment: string
+  distance: number
   latitude: number
   longitude: number
+  image: string
+  date: string
   time: string
   day: string
+  recurring: boolean
   max_participants: number
-  current_participants: number
+  participant_count: number
 }
 
 interface MapProps {
@@ -133,7 +140,7 @@ export default function Map({ opportunities }: MapProps) {
                 <p className="text-sm">{opportunity.organization}</p>
                 <p className="text-sm text-gray-600">{opportunity.day}s at {opportunity.time}</p>
                 <p className="text-sm font-medium">
-                  {opportunity.current_participants}/{opportunity.max_participants} spots filled
+                  {opportunity.participant_count}/{opportunity.max_participants} spots filled
                 </p>
               </div>
             </Popup>

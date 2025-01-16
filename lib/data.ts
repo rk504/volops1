@@ -16,12 +16,13 @@ export interface Opportunity {
   day: string
   recurring: boolean
   max_participants: number
-  current_participants: number
+  participant_count: number
 }
 
 export async function fetchOpportunities(): Promise<Opportunity[]> {
-  const { data, error } = await supabase
-    .from('events')
+  // Get events with their registration counts directly from the view
+  const { data: events, error } = await supabase
+    .from('events_with_counts')
     .select('*')
     .order('date', { ascending: true })
 
@@ -31,7 +32,7 @@ export async function fetchOpportunities(): Promise<Opportunity[]> {
   }
 
   // Transform the data to match our interface
-  return data.map(event => {
+  return (events || []).map(event => {
     const date = new Date(event.date)
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
     
@@ -55,8 +56,8 @@ export async function fetchOpportunities(): Promise<Opportunity[]> {
       day: days[date.getDay()],
       recurring: event.recurring || false,
       max_participants: event.max_participants || 10,
-      current_participants: event.current_participants || 0
-    }
+      participant_count: event.participant_count || 0
+    } as Opportunity
   })
 }
 
@@ -75,8 +76,7 @@ INSERT INTO public.events (
   image,
   date,
   recurring,
-  max_participants,
-  current_participants
+  max_participants
 ) VALUES 
 (
   '7ece8788-60de-46f2-be9a-cd6fac949cdf',
@@ -91,8 +91,7 @@ INSERT INTO public.events (
   '/images/teach-english.jpg',
   '2025-02-03T15:00:00Z',
   true,
-  10,
-  5
+  10
 ),
 (
   '9d1d0ce9-d6fd-4d31-842f-d56e2b6c1bf0',
@@ -107,8 +106,7 @@ INSERT INTO public.events (
   '/images/community-garden.jpg',
   '2025-02-08T10:00:00Z',
   true,
-  20,
-  10
+  20
 ),
 (
   'b5e6d3f2-8c7a-4b9d-a1e2-f3c4d5e6f7g8',
@@ -123,8 +121,7 @@ INSERT INTO public.events (
   '/images/elder-care.jpg',
   '2025-02-05T14:00:00Z',
   true,
-  8,
-  5
+  8
 ),
 (
   'c6f7e4d3-9b8a-5c4d-b2e3-g4h5i6j7k8l9',
@@ -139,8 +136,7 @@ INSERT INTO public.events (
   '/images/food-bank.jpg',
   '2025-02-15T09:00:00Z',
   true,
-  15,
-  7
+  15
 ),
 (
   'd7g8f5e4-0c9b-6d5e-c3f4-h5i6j7k8l9m0',
@@ -155,8 +151,7 @@ INSERT INTO public.events (
   '/images/youth-mentor.jpg',
   '2025-02-11T16:30:00Z',
   true,
-  12,
-  8
+  12
 ),
 (
   'e8h9g6f5-1d0c-7e6f-d4g5-i6j7k8l9m0n1',
@@ -171,8 +166,7 @@ INSERT INTO public.events (
   '/images/animal-shelter.jpg',
   '2025-02-09T11:00:00Z',
   true,
-  10,
-  4
+  10
 );
 */
 

@@ -26,7 +26,7 @@ const mockOpportunities = [
     day: "Monday",
     recurring: true,
     max_participants: 10,
-    current_participants: 5
+    participant_count: 5
   },
   {
     id: "9d1d0ce9-d6fd-4d31-842f-d56e2b6c1bf0",
@@ -44,7 +44,7 @@ const mockOpportunities = [
     day: "Saturday",
     recurring: true,
     max_participants: 20,
-    current_participants: 10
+    participant_count: 10
   },
   {
     id: "b5e6d3f2-8c7a-4b9d-a1e2-f3c4d5e6f7g8",
@@ -62,7 +62,7 @@ const mockOpportunities = [
     day: "Wednesday",
     recurring: true,
     max_participants: 8,
-    current_participants: 5
+    participant_count: 5
   },
   {
     id: "c6f7e4d3-9b8a-5c4d-b2e3-g4h5i6j7k8l9",
@@ -80,7 +80,7 @@ const mockOpportunities = [
     day: "Saturday",
     recurring: true,
     max_participants: 15,
-    current_participants: 7
+    participant_count: 7
   },
   {
     id: "d7g8f5e4-0c9b-6d5e-c3f4-h5i6j7k8l9m0",
@@ -98,7 +98,7 @@ const mockOpportunities = [
     day: "Tuesday",
     recurring: true,
     max_participants: 12,
-    current_participants: 8
+    participant_count: 8
   },
   {
     id: "e8h9g6f5-1d0c-7e6f-d4g5-i6j7k8l9m0n1",
@@ -116,7 +116,7 @@ const mockOpportunities = [
     day: "Sunday",
     recurring: true,
     max_participants: 10,
-    current_participants: 4
+    participant_count: 4
   }
 ]
 

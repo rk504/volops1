@@ -10,11 +10,16 @@ interface Opportunity {
   description: string
   category: string
   commitment: string
+  distance: number
+  latitude: number
+  longitude: number
   image: string
+  date: string
   time: string
   day: string
+  recurring: boolean
   max_participants: number
-  current_participants: number
+  participant_count: number
 }
 
 interface OpportunityListProps {
@@ -79,20 +84,21 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
                     <Badge variant="secondary">{opportunity.category}</Badge>
                     <Badge variant="outline">{opportunity.commitment}</Badge>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <span className="text-sm font-medium">
-                      {opportunity.current_participants}/{opportunity.max_participants} spots filled
-                    </span>
-                    <Button
-                      onClick={() => handleRegister(opportunity.id.toString())}
-                      disabled={opportunity.current_participants >= opportunity.max_participants}
-                      variant={opportunity.current_participants >= opportunity.max_participants ? "secondary" : "default"}
-                    >
-                      {opportunity.current_participants >= opportunity.max_participants 
-                        ? 'Event Full' 
-                        : 'Register'}
-                    </Button>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">
+                      {opportunity.participant_count} / {opportunity.max_participants} spots filled
+                    </Badge>
+                    {opportunity.participant_count >= opportunity.max_participants && (
+                      <Badge variant="destructive">Full</Badge>
+                    )}
                   </div>
+                  <Button
+                    variant={opportunity.participant_count >= opportunity.max_participants ? "secondary" : "default"}
+                    onClick={() => handleRegister(opportunity.id)}
+                    disabled={opportunity.participant_count >= opportunity.max_participants}
+                  >
+                    {opportunity.participant_count >= opportunity.max_participants ? 'Full' : 'Register'}
+                  </Button>
                 </div>
               </div>
             </div>

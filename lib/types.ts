@@ -13,7 +13,6 @@ export type Event = {
   location: string
   date: string
   max_participants: number
-  current_participants: number
   created_at: string
   updated_at: string
 }
