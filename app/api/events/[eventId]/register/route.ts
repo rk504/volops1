@@ -9,6 +9,16 @@ export async function POST(
     const eventId = params.eventId
     console.log('Received registration request for event:', eventId)
 
+    // Get user data from request body
+    const { name, email, phone } = await request.json()
+
+    if (!name || !email) {
+      return NextResponse.json(
+        { error: 'Name and email are required' },
+        { status: 400 }
+      )
+    }
+
     // TODO: In production, get this from auth
     const TEST_USER_ID = '123e4567-e89b-12d3-a456-426614174000'
 
@@ -49,14 +59,14 @@ export async function POST(
         { status: 404 }
       )
     }
-/* 
+
     // Check if event is full
-    if (event.participant_count == event.max_participants) {
+    if (event.participant_count >= event.max_participants) {
       return NextResponse.json(
         { error: 'Event is full' },
         { status: 400 }
       )
-    } */
+    }
 
     // Create registration
     const { error: regError } = await supabase
@@ -64,8 +74,9 @@ export async function POST(
       .insert([{ 
         user_id: TEST_USER_ID, 
         event_id: eventId,
-        name: 'Test User',
-        email: 'test@example.com'
+        name,
+        email,
+        phone
       }])
 
     if (regError) {

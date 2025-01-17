@@ -143,14 +143,16 @@ export default function TestInterface() {
       const isWeekend = opp.day === 'Saturday' || opp.day === 'Sunday'
       const timeOfDay = getTimeOfDay(opp.time)
       
-      const matchesAvailability = Array.from(filters.availability).some(filter => {
-        if (filter === 'Weekdays') return !isWeekend
-        if (filter === 'Weekends') return isWeekend
-        if (['Morning', 'Afternoon', 'Evening'].includes(filter)) return timeOfDay === filter
-        return false
-      })
-
-      if (!matchesAvailability) return false
+      // Check each selected filter - ALL must match
+      const selectedFilters = Array.from(filters.availability)
+      for (const filter of selectedFilters) {
+        // Day type checks
+        if (filter === 'Weekdays' && isWeekend) return false
+        if (filter === 'Weekends' && !isWeekend) return false
+        
+        // Time of day checks
+        if (['Morning', 'Afternoon', 'Evening'].includes(filter) && timeOfDay !== filter) return false
+      }
     }
 
     return true

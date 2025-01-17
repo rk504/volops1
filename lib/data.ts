@@ -33,8 +33,20 @@ export async function fetchOpportunities(): Promise<Opportunity[]> {
 
   // Transform the data to match our interface
   return (events || []).map(event => {
+    // Create a date object from the UTC timestamp
     const date = new Date(event.date)
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    
+    // Format the time in ET
+    const etTime = date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'America/New_York'
+    })
+    
+    // Get the day of week in ET
+    const etDate = new Date(date.toLocaleString('en-US', { timeZone: 'America/New_York' }))
     
     return {
       id: event.id,
@@ -48,12 +60,8 @@ export async function fetchOpportunities(): Promise<Opportunity[]> {
       longitude: event.longitude || -74.0060,
       image: event.image || '/placeholder-logo.png',
       date: event.date,
-      time: date.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit', 
-        hour12: true 
-      }),
-      day: days[date.getDay()],
+      time: `${etTime} ET`,
+      day: days[etDate.getDay()],
       recurring: event.recurring || false,
       max_participants: event.max_participants || 10,
       participant_count: event.participant_count || 0
