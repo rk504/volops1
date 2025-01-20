@@ -27,6 +27,7 @@ interface Opportunity {
   recurring: boolean
   max_participants: number
   participant_count: number
+  is_registered?: boolean
 }
 
 interface OpportunityListProps {
@@ -57,6 +58,33 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
     setSelectedOpportunity(opportunities.find(opp => opp.id === opportunityId) || null)
   }
 
+  const handleDeregister = async (opportunityId: string, title: string) => {
+    try {
+      const response = await fetch(`/api/events/${opportunityId}/deregister`, {
+        method: 'POST',
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to deregister')
+      }
+
+      toast({
+        title: 'Success',
+        description: `You have been deregistered from ${title}`,
+        variant: 'default',
+      })
+
+      onRegistrationComplete()
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to deregister from event',
+        variant: 'destructive',
+      })
+    }
+  }
+
   const handleRegistrationSubmit = async (data: { name: string; email: string; phone?: string }) => {
     if (!selectedOpportunity) return
 
@@ -85,14 +113,19 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
       }
 
       toast({
-        title: "Success!",
-        description: "You have been registered for the event",
+        title: "You're registered! 🎉",
+        description: "Expect an email with event details 48 hours before your event. Check your dashboard to see your upcoming events.",
         variant: "default"
       })
 
       // Close the form and refresh the opportunities data
       setSelectedOpportunity(null)
       onRegistrationComplete()
+      
+      // Redirect to dashboard after a short delay
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 2000)
     } catch (error: any) {
       toast({
         title: "Registration Failed",
@@ -119,9 +152,9 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
                 <div className="flex-1">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="text-lg font-semibold">{opportunity.title}</h3>
-                    <Button variant="outline" size="sm" className="text-xs">
+                    <Badge variant="outline">
                       {opportunity.day}s at {opportunity.time}
-                    </Button>
+                    </Badge>
                   </div>
                   <p className="text-sm text-gray-600 mb-2">{opportunity.organization}</p>
                   <p className="text-sm mb-4">{opportunity.description}</p>
@@ -130,21 +163,31 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
                       <Badge variant="secondary">{opportunity.category}</Badge>
                       <Badge variant="outline">{opportunity.commitment}</Badge>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-4">
                       <Badge variant="secondary">
                         {opportunity.participant_count} / {opportunity.max_participants} spots filled
                       </Badge>
                       {opportunity.participant_count >= opportunity.max_participants && (
                         <Badge variant="destructive">Full</Badge>
                       )}
+                      {opportunity.is_registered ? (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeregister(opportunity.id, opportunity.title)}
+                        >
+                          Deregister
+                        </Button>
+                      ) : (
+                        <Button
+                          variant={opportunity.participant_count >= opportunity.max_participants ? "secondary" : "default"}
+                          onClick={() => handleRegister(opportunity.id, opportunity.title)}
+                          disabled={opportunity.participant_count >= opportunity.max_participants}
+                        >
+                          {opportunity.participant_count >= opportunity.max_participants ? 'Full' : 'Register'}
+                        </Button>
+                      )}
                     </div>
-                    <Button
-                      variant={opportunity.participant_count >= opportunity.max_participants ? "secondary" : "default"}
-                      onClick={() => handleRegister(opportunity.id, opportunity.title)}
-                      disabled={opportunity.participant_count >= opportunity.max_participants}
-                    >
-                      {opportunity.participant_count >= opportunity.max_participants ? 'Full' : 'Register'}
-                    </Button>
                   </div>
                 </div>
               </div>

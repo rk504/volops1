@@ -1,13 +1,21 @@
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
 
 export async function POST(
   request: Request,
   { params }: { params: { eventId: string } }
 ) {
   try {
+    const supabase = createRouteHandlerClient({ cookies })
     const eventId = params.eventId
-    console.log('Received registration request for event:', eventId)
+
+    // Get the current user's session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError) throw sessionError
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     // Get user data from request body
     const { name, email, phone } = await request.json()
@@ -19,15 +27,13 @@ export async function POST(
       )
     }
 
-    // TODO: In production, get this from auth
-    const TEST_USER_ID = '123e4567-e89b-12d3-a456-426614174000'
-
     // Check if already registered
     const { data: existingReg, error: checkError } = await supabase
       .from('registrations')
       .select('id')
       .eq('event_id', eventId)
-      .eq('user_id', TEST_USER_ID)
+      .eq('user_id', session.user.id)
+      .eq('status', 'active')
       .single()
 
     if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found" error
@@ -47,9 +53,10 @@ export async function POST(
 
     // Get event details and current count
     const { data: event, error: eventError } = await supabase
-      .from('events_with_counts')
+      .from('event_registrations')
       .select('*')
-      .eq('id', eventId)
+      .is('user_id', null)
+      .eq('event_id', eventId)
       .single()
 
     if (eventError || !event) {
@@ -72,11 +79,12 @@ export async function POST(
     const { error: regError } = await supabase
       .from('registrations')
       .insert([{ 
-        user_id: TEST_USER_ID, 
+        user_id: session.user.id,
         event_id: eventId,
         name,
         email,
-        phone
+        phone,
+        status: 'active'
       }])
 
     if (regError) {
@@ -95,19 +103,10 @@ export async function POST(
       )
     }
 
-    // Get updated count
-    const { data: updatedEvent } = await supabase
-      .from('events_with_counts')
-      .select('*')
-      .eq('id', eventId)
-      .single()
-
     return NextResponse.json(
       {
         message: 'Successfully registered for event',
-        event: updatedEvent,
-        previousCount: event.participant_count,
-        newCount: updatedEvent?.participant_count || event.participant_count + 1
+        event: event
       },
       { status: 200 }
     )

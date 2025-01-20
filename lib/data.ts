@@ -1,5 +1,10 @@
 import { supabase } from './supabase'
 
+interface Registration {
+  id: string;
+  status: 'active' | 'cancelled';
+}
+
 export interface Opportunity {
   id: string
   title: string
@@ -20,10 +25,11 @@ export interface Opportunity {
 }
 
 export async function fetchOpportunities(): Promise<Opportunity[]> {
-  // Get events with their registration counts directly from the view
+  // Get events with their registration counts
   const { data: events, error } = await supabase
     .from('events_with_counts')
     .select('*')
+    .eq('status', 'active')
     .order('date', { ascending: true })
 
   if (error) {
@@ -64,7 +70,7 @@ export async function fetchOpportunities(): Promise<Opportunity[]> {
       day: days[etDate.getDay()],
       recurring: event.recurring || false,
       max_participants: event.max_participants || 10,
-      participant_count: event.participant_count || 0
+      participant_count: event.participant_count
     } as Opportunity
   })
 }
