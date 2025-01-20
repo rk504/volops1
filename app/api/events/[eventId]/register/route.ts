@@ -1,4 +1,4 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
@@ -7,15 +7,69 @@ export async function POST(
   { params }: { params: { eventId: string } }
 ) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
-    const eventId = params.eventId
+    const cookieStore = cookies()
+    
+    // Create server client
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: any) {
+            try {
+              cookieStore.set({ name, value, ...options })
+            } catch (error) {
+              // Handle cookie setting error
+            }
+          },
+          remove(name: string, options: any) {
+            try {
+              cookieStore.set({ name, value: '', ...options })
+            } catch (error) {
+              // Handle cookie removal error
+            }
+          },
+        },
+      }
+    )
 
-    // Get the current user's session
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    if (sessionError) throw sessionError
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    
+    if (sessionError || !session) {
+      console.error('Session error:', sessionError)
+      return NextResponse.json({ error: 'Unauthorized - Please sign in' }, { status: 401 })
     }
+
+    const { eventId } = params
+    console.log('Looking up event:', eventId)
+
+    // Check if event exists and get its details
+    const { data: event, error: eventError } = await supabase
+      .from('events')
+      .select('*')
+      .eq('id', eventId)
+      .single()
+
+    console.log('Event lookup details:', {
+      eventId,
+      found: !!event,
+      error: eventError ? {
+        code: eventError.code,
+        message: eventError.message,
+        details: eventError.details
+      } : null,
+      event: event
+    })
+
+    if (eventError || !event) {
+      console.error('Event lookup error:', { eventError, eventId })
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+    }
+
+    console.log('Found event:', event)
 
     // Get user data from request body
     const { name, email, phone } = await request.json()
@@ -51,24 +105,8 @@ export async function POST(
       )
     }
 
-    // Get event details and current count
-    const { data: event, error: eventError } = await supabase
-      .from('event_registrations')
-      .select('*')
-      .is('user_id', null)
-      .eq('event_id', eventId)
-      .single()
-
-    if (eventError || !event) {
-      console.error('Error fetching event:', eventError)
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      )
-    }
-
     // Check if event is full
-    if (event.participant_count >= event.max_participants) {
+    if (event.max_participants && event.participant_count >= event.max_participants) {
       return NextResponse.json(
         { error: 'Event is full' },
         { status: 400 }

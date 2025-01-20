@@ -4,48 +4,46 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { createBrowserClient } from '@supabase/ssr'
 
-type AuthContextType = {
+interface AuthContextType {
   user: User | null
   session: Session | null
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
-  loading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Create a single Supabase client for browser-side use
+export const browserSupabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  // Create a Supabase client configured to use cookies
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Check active session
+    browserSupabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
-      setLoading(false)
     })
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Listen for changes
+    const { data: { subscription } } = browserSupabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
-      setLoading(false)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await browserSupabase.auth.signInWithPassword({
       email,
       password,
     })
@@ -53,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { error } = await browserSupabase.auth.signUp({
       email,
       password,
     })
@@ -61,12 +59,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
+    const { error } = await browserSupabase.auth.signOut()
     if (error) throw error
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, signIn, signUp, signOut, loading }}>
+    <AuthContext.Provider value={{ user, session, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   )

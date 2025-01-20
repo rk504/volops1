@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useState } from 'react'
+import { useAuth } from '@/lib/auth/AuthContext'
 
 interface RegistrationFormProps {
   isOpen: boolean
@@ -15,9 +16,21 @@ export default function RegistrationForm({ isOpen, onClose, onSubmit, title }: R
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const { session } = useAuth()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    
+    console.log('Pre-registration auth check:', {
+      hasSession: !!session,
+      userId: session?.user?.id
+    })
+
+    if (!session) {
+      console.error('No active session')
+      return
+    }
+
     onSubmit({ name, email, phone })
     setName('')
     setEmail('')
@@ -66,7 +79,9 @@ export default function RegistrationForm({ isOpen, onClose, onSubmit, title }: R
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">Register</Button>
+            <Button type="submit" disabled={!session}>
+              Register
+            </Button>
           </div>
         </form>
       </DialogContent>
