@@ -1,8 +1,22 @@
+'use client'
+
 import Link from 'next/link'
+import { useAuth } from '@/lib/auth/AuthContext'
+import { Button } from '@/components/ui/button'
 import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 
 export default function Header() {
+  const { user, signOut } = useAuth()
+
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+    } catch (error) {
+      console.error('Error signing out:', error)
+    }
+  }
+
   return (
     <header className="bg-white border-b border-gray-200 py-4 px-6 flex items-center justify-between">
       <Link href="/" className="text-2xl font-bold text-blue-600">Volops</Link>
@@ -16,11 +30,26 @@ export default function Header() {
           />
         </div>
         <nav>
-          <ul className="flex space-x-4">
-            <li><Link href="/" className="text-gray-600 hover:text-blue-600">Browse</Link></li>
-            <li><Link href="/how-it-works" className="text-gray-600 hover:text-blue-600">How it works</Link></li>
-            <li><Link href="#" className="text-gray-600 hover:text-blue-600">Sign in</Link></li>
-          </ul>
+          {user ? (
+            <>
+              <Link href="/dashboard">
+                <Button variant="ghost">Dashboard</Button>
+              </Link>
+              <Link href="/profile">
+                <Button variant="ghost">Profile</Button>
+              </Link>
+              <Button 
+                variant="outline" 
+                onClick={handleSignOut}
+              >
+                Sign Out
+              </Button>
+            </>
+          ) : (
+            <Link href="/auth">
+              <Button>Sign In</Button>
+            </Link>
+          )}
         </nav>
       </div>
     </header>

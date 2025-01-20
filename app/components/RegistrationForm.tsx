@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useState } from 'react'
 
 interface RegistrationFormProps {
   isOpen: boolean
@@ -26,29 +26,30 @@ export default function RegistrationForm({ isOpen, onClose, onSubmit, title }: R
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px]" aria-describedby="registration-form-description">
         <DialogHeader>
           <DialogTitle>Register for {title}</DialogTitle>
+          <DialogDescription id="registration-form-description">
+            Fill out your information below to register for this opportunity.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
+            <Label htmlFor="name">Name</Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="your.email@example.com"
               required
             />
           </div>
@@ -59,7 +60,6 @@ export default function RegistrationForm({ isOpen, onClose, onSubmit, title }: R
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="(123) 456-7890"
             />
           </div>
           <div className="flex justify-end space-x-2">

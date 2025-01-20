@@ -1,9 +1,14 @@
+'use client'
+
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/use-toast'
 import Image from 'next/image'
 import { useState } from 'react'
 import RegistrationForm from './RegistrationForm'
+import { useAuth } from '@/lib/auth/AuthContext'
+import { useRouter } from 'next/navigation'
 
 interface Opportunity {
   id: string
@@ -31,12 +36,24 @@ interface OpportunityListProps {
 
 export default function OpportunityList({ opportunities, onRegistrationComplete }: OpportunityListProps) {
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null)
+  const { user } = useAuth()
+  const router = useRouter()
+  const { toast } = useToast()
 
   if (!opportunities || !Array.isArray(opportunities)) {
     return <div>No opportunities available</div>
   }
 
   const handleRegister = async (opportunityId: string, title: string) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to register for events",
+        variant: "destructive"
+      })
+      router.push('/auth')
+      return
+    }
     setSelectedOpportunity(opportunities.find(opp => opp.id === opportunityId) || null)
   }
 
@@ -44,7 +61,6 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
     if (!selectedOpportunity) return
 
     try {
-      console.log('Attempting to register for event:', selectedOpportunity.id)
       const response = await fetch(`/api/events/${selectedOpportunity.id}/register`, {
         method: 'POST',
         headers: {
@@ -54,18 +70,35 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
       })
       
       const responseData = await response.json()
-      console.log('Registration response:', responseData)
       
       if (!response.ok) {
-        throw new Error(responseData.error || 'Failed to register')
+        if (responseData.error === 'Already registered for this event') {
+          toast({
+            title: "Already Registered",
+            description: "You are already registered for this event",
+            variant: "default"
+          })
+        } else {
+          throw new Error(responseData.error || 'Failed to register')
+        }
+        return
       }
+
+      toast({
+        title: "Success!",
+        description: "You have been registered for the event",
+        variant: "default"
+      })
 
       // Close the form and refresh the opportunities data
       setSelectedOpportunity(null)
       onRegistrationComplete()
     } catch (error: any) {
-      console.error('Registration error:', error)
-      alert(error.message || 'Failed to register for event')
+      toast({
+        title: "Registration Failed",
+        description: error.message || 'Failed to register for event',
+        variant: "destructive"
+      })
     }
   }
 
