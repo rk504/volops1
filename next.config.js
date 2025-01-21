@@ -10,6 +10,16 @@ const nextConfig = {
   experimental: {
     missingSuspenseWithCSRError: false,
   },
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: '/api/:path*',
+          destination: '/api/:path*',
+        },
+      ],
+    }
+  },
 }
 
 module.exports = nextConfig 
