@@ -9,11 +9,6 @@
   status = 200
   force = true
 
-  from = "/api/events/:eventId/toggle"
-  to = "/.netlify/functions/api"
-  status = 200
-  force = true
-
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["@node-rs/bcrypt", "@node-rs/helper"]
