@@ -315,7 +315,7 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
         onClose={() => setDeregisterOpportunity(null)}
         onConfirm={confirmDeregister}
         title="Confirm Deregistration"
-        description={`Are you sure you want to deregister from ${deregisterOpportunity?.title}? This action cannot be undone.`}
+        description={`Are you sure you want to deregister from ${deregisterOpportunity?.title}? This action cannot be undone. Once you deregister, you will not be able to re-register for this event.`}
       />
     </>
   )
