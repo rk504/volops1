@@ -4,25 +4,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { supabase } from '@/lib/supabase'
 import OpportunityList from '../components/OpportunityList'
-
-interface Opportunity {
-  id: string
-  title: string
-  organization: string
-  description: string
-  category: string
-  commitment: string
-  distance: number
-  latitude: number
-  longitude: number
-  image: string
-  date: string
-  time: string
-  day: string
-  recurring: boolean
-  max_participants: number
-  participant_count: number
-}
+import { Opportunity } from '@/lib/data'
 
 export default function DashboardPage() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([])
@@ -55,7 +37,32 @@ export default function DashboardPage() {
           .order('date', { ascending: true })
 
         if (eventsError) throw eventsError
-        setOpportunities(events || [])
+
+        // Transform events to include proper time formatting
+        const transformedEvents = (events || []).map(event => {
+          // Create a date object from the UTC timestamp
+          const date = new Date(event.date)
+          const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+          
+          // Format the time in ET
+          const etTime = date.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: true,
+            timeZone: 'America/New_York'
+          })
+          
+          // Get the day of week in ET
+          const etDate = new Date(date.toLocaleString('en-US', { timeZone: 'America/New_York' }))
+          
+          return {
+            ...event,
+            time: `${etTime} ET`,
+            day: days[etDate.getDay()]
+          }
+        })
+
+        setOpportunities(transformedEvents)
       }
     } catch (error) {
       console.error('Error fetching opportunities:', error)
