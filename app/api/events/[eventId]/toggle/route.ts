@@ -69,18 +69,10 @@ export async function POST(
       return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
-    // Get user data from request body
+    // Get user data from request body (optional now)
     const body = await request.json()
     console.log('Request body:', body)
-    const { name, email } = body
-
-    if (!name || !email) {
-      console.log('Missing required fields:', { name, email })
-      return NextResponse.json(
-        { error: 'Name and email are required' },
-        { status: 400 }
-      )
-    }
+    const { name = session.user.email?.split('@')[0], email = session.user.email } = body
 
     // Check for existing registration
     const { data: existingReg, error: checkError } = await supabase
