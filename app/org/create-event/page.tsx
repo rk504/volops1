@@ -66,19 +66,25 @@ export default function CreateEventPage() {
         date.setDate(date.getDate() + 1)
       }
 
-      const { error } = await supabase
-        .from('events')
-        .insert({
-          title: formData.title,
-          description: formData.description,
-          max_participants: parseInt(formData.maxParticipants),
-          date: date.toISOString(),
-          location: formData.location,
-          category: formData.category,
-          organizer_id: user.id
-        })
+      const eventData = {
+        title: formData.title,
+        description: formData.description,
+        max_participants: parseInt(formData.maxParticipants),
+        date: date.toISOString(),
+        location: formData.location,
+        category: formData.category,
+        organizer_id: user.id
+      }
 
-      if (error) throw error
+      const { data, error } = await supabase
+        .from('events')
+        .insert([eventData])
+        .select()
+
+      if (error) {
+        console.error('Supabase error:', error)
+        throw new Error(error.message)
+      }
 
       toast({
         title: "Success",
@@ -99,7 +105,7 @@ export default function CreateEventPage() {
       console.error('Error creating event:', error)
       toast({
         title: "Error",
-        description: "Failed to create event. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create event. Please try again.",
         variant: "destructive"
       })
     } finally {
