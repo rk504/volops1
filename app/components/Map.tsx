@@ -57,7 +57,7 @@ export default function Map({ opportunities }: MapProps) {
       return {
         bounds: undefined,
         center: [40.7128, -74.0060] as LatLngTuple, // Default to NYC
-        zoom: 11
+        zoom: 10  // Decreased from 11
       }
     }
 
@@ -161,9 +161,9 @@ function getBoundsZoom(bounds: L.LatLngBounds): number {
   const maxDiff = Math.max(latDiff, lngDiff) * (1 + PADDING)
   
   // This is a rough approximation - you might need to adjust these values
-  if (maxDiff > 1) return 10
-  if (maxDiff > 0.5) return 11
-  if (maxDiff > 0.1) return 12
-  return 13
+  if (maxDiff > 1) return 9   // Decreased from 10
+  if (maxDiff > 0.5) return 10 // Decreased from 11
+  if (maxDiff > 0.1) return 11 // Decreased from 12
+  return 12                    // Decreased from 13
 }
 
