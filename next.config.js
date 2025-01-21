@@ -14,9 +14,15 @@ const nextConfig = {
     return {
       beforeFiles: [
         {
-          source: '/api/:path*',
-          destination: '/api/:path*',
+          source: '/api/events/:eventId/register',
+          destination: '/api/events/:eventId/register',
+          has: [{ type: 'header', key: 'content-type', value: 'application/json' }]
         },
+        {
+          source: '/api/events/:eventId/deregister',
+          destination: '/api/events/:eventId/deregister',
+          has: [{ type: 'header', key: 'content-type', value: 'application/json' }]
+        }
       ],
     }
   },
