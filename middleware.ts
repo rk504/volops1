@@ -61,6 +61,7 @@ export const config = {
     '/dashboard/:path*',
     '/api/dashboard/:path*',
     '/api/events/:path*/register',
-    '/api/events/:path*/deregister'
+    '/api/events/:path*/deregister',
+    '/api/events/:path*/toggle'
   ]
 } 

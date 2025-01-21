@@ -131,7 +131,11 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
       router.push('/auth')
       return
     }
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> add5882 (boolean logic for registrations)
     try {
       const response = await fetch(`/api/events/${opportunityId}/toggle`, {
         method: 'POST',
@@ -151,10 +155,17 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
         throw new Error(data.error || 'Failed to update registration')
       }
 
+<<<<<<< HEAD
       // Update local state based on the new status
       setUserRegistrations(prev => {
         const next = new Set(prev)
         if (data.registration.status === 'active') {
+=======
+      // Update local state based on returned status
+      setUserRegistrations(prev => {
+        const next = new Set(prev)
+        if (data.status === 'active') {
+>>>>>>> add5882 (boolean logic for registrations)
           next.add(opportunityId)
         } else {
           next.delete(opportunityId)
@@ -162,6 +173,7 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
         return next
       })
 
+<<<<<<< HEAD
       // Show success message
       toast({
         title: 'Success',
@@ -171,6 +183,17 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
 
       if (data.registration.status === 'active') {
         setRegistrationSuccess({ title })
+=======
+      // Show success dialog only for new registrations
+      if (data.status === 'active' && !userRegistrations.has(opportunityId)) {
+        setRegistrationSuccess({ title })
+      } else {
+        toast({
+          title: "Success",
+          description: data.message,
+          variant: "default"
+        })
+>>>>>>> add5882 (boolean logic for registrations)
       }
       
       onRegistrationComplete()
@@ -219,6 +242,7 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
                       {opportunity.participant_count >= opportunity.max_participants && (
                         <Badge variant="destructive">Full</Badge>
                       )}
+<<<<<<< HEAD
                       <Button
                         variant={userRegistrations.has(opportunity.id) ? "secondary" : "default"}
                         onClick={() => handleRegister(opportunity.id, opportunity.title)}
@@ -226,6 +250,25 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
                       >
                         {userRegistrations.has(opportunity.id) ? 'Registered' : 'Register'}
                       </Button>
+=======
+                      {userRegistrations.has(opportunity.id) ? (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleRegister(opportunity.id, opportunity.title)}
+                        >
+                          Registered
+                        </Button>
+                      ) : (
+                        <Button
+                          variant={opportunity.participant_count >= opportunity.max_participants ? "secondary" : "default"}
+                          onClick={() => handleRegister(opportunity.id, opportunity.title)}
+                          disabled={opportunity.participant_count >= opportunity.max_participants}
+                        >
+                          {opportunity.participant_count >= opportunity.max_participants ? 'Full' : 'Register'}
+                        </Button>
+                      )}
+>>>>>>> add5882 (boolean logic for registrations)
                     </div>
                   </div>
                 </div>
