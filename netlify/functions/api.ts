@@ -35,15 +35,6 @@ export const handler: Handler = async (event, context) => {
     }
   )
 
-  // Get user session
-  const authHeader = event.headers.authorization || event.headers.Authorization
-  if (!authHeader) {
-    return {
-      statusCode: 401,
-      body: JSON.stringify({ error: 'Unauthorized - No auth header' })
-    }
-  }
-
   try {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     
