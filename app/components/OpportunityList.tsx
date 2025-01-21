@@ -195,6 +195,10 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
     try {
       const response = await fetch(`/api/events/${deregisterOpportunity.id}/deregister`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
       })
       const data = await response.json()
 
