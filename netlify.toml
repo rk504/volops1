@@ -1,17 +1,18 @@
 [build]
   command = "npm run build"
   publish = ".next"
+  functions = "netlify/functions"
 
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/nextjs-server/api/:splat"
+  to = "/.netlify/functions/api/:splat"
   status = 200
   force = true
 
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["@node-rs/bcrypt", "@node-rs/helper"]
-  included_files = ["app/api/**/*"]
+  directory = "netlify/functions"
 
 [build.environment]
   NEXT_USE_NETLIFY_EDGE = "true"
