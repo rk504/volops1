@@ -76,14 +76,25 @@ export default function Home() {
       const isWeekend = opp.day === 'Saturday' || opp.day === 'Sunday'
       const timeOfDay = getTimeOfDay(opp.time)
       
-      const matchesAvailability = Array.from(filters.availability).some(filter => {
-        if (filter === 'Weekdays') return !isWeekend
-        if (filter === 'Weekends') return isWeekend
-        if (['Morning', 'Afternoon', 'Evening'].includes(filter)) return timeOfDay === filter
-        return false
-      })
-
-      if (!matchesAvailability) return false
+      // Split filters into day types and times
+      const dayTypeFilters = Array.from(filters.availability).filter(f => ['Weekdays', 'Weekends'].includes(f))
+      const timeFilters = Array.from(filters.availability).filter(f => ['Morning', 'Afternoon', 'Evening'].includes(f))
+      
+      // Check day type (if any selected)
+      if (dayTypeFilters.length > 0) {
+        const matchesDayType = dayTypeFilters.some(filter => {
+          if (filter === 'Weekdays') return !isWeekend
+          if (filter === 'Weekends') return isWeekend
+          return false
+        })
+        if (!matchesDayType) return false
+      }
+      
+      // Check time of day (if any selected)
+      if (timeFilters.length > 0) {
+        const matchesTime = timeFilters.some(filter => timeOfDay === filter)
+        if (!matchesTime) return false
+      }
     }
 
     return true
