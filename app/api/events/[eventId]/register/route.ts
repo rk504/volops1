@@ -2,11 +2,17 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'edge'
+
 export async function POST(
   request: Request,
   { params }: { params: { eventId: string } }
 ) {
   try {
+    console.log('=== REGISTRATION DEBUG START ===')
+    console.log('Event ID from params:', params.eventId)
+    
     const cookieStore = cookies()
     
     // Create server client
@@ -22,14 +28,14 @@ export async function POST(
             try {
               cookieStore.set({ name, value, ...options })
             } catch (error) {
-              // Handle cookie setting error
+              console.error('Cookie set error:', error)
             }
           },
           remove(name: string, options: any) {
             try {
               cookieStore.set({ name, value: '', ...options })
             } catch (error) {
-              // Handle cookie removal error
+              console.error('Cookie remove error:', error)
             }
           },
         },
@@ -37,6 +43,11 @@ export async function POST(
     )
 
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    console.log('Session check:', {
+      hasSession: !!session,
+      userId: session?.user?.id,
+      error: sessionError
+    })
     
     if (sessionError || !session) {
       console.error('Session error:', sessionError)
@@ -69,12 +80,13 @@ export async function POST(
       return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
-    console.log('Found event:', event)
-
     // Get user data from request body
-    const { name, email, phone } = await request.json()
+    const body = await request.json()
+    console.log('Request body:', body)
+    const { name, email, phone } = body
 
     if (!name || !email) {
+      console.log('Missing required fields:', { name, email })
       return NextResponse.json(
         { error: 'Name and email are required' },
         { status: 400 }
@@ -82,6 +94,11 @@ export async function POST(
     }
 
     // Check if already registered
+    console.log('Checking existing registration for:', {
+      userId: session.user.id,
+      eventId: eventId
+    })
+    
     const { data: existingReg, error: checkError } = await supabase
       .from('registrations')
       .select('id')
@@ -89,6 +106,14 @@ export async function POST(
       .eq('user_id', session.user.id)
       .eq('status', 'active')
       .single()
+
+    console.log('Existing registration check:', {
+      exists: !!existingReg,
+      error: checkError ? {
+        code: checkError.code,
+        message: checkError.message
+      } : null
+    })
 
     if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found" error
       console.error('Error checking registration:', checkError)
@@ -99,6 +124,7 @@ export async function POST(
     }
 
     if (existingReg) {
+      console.log('User already registered:', existingReg)
       return NextResponse.json(
         { error: 'Already registered for this event' },
         { status: 400 }
@@ -106,7 +132,13 @@ export async function POST(
     }
 
     // Check if event is full
+    console.log('Checking event capacity:', {
+      current: event.participant_count,
+      max: event.max_participants
+    })
+    
     if (event.max_participants && event.participant_count >= event.max_participants) {
+      console.log('Event is full')
       return NextResponse.json(
         { error: 'Event is full' },
         { status: 400 }
@@ -114,6 +146,13 @@ export async function POST(
     }
 
     // Create registration
+    console.log('Attempting to create registration:', {
+      userId: session.user.id,
+      eventId: eventId,
+      name,
+      email
+    })
+    
     const { error: regError } = await supabase
       .from('registrations')
       .insert([{ 
@@ -140,6 +179,9 @@ export async function POST(
         { status: 500 }
       )
     }
+
+    console.log('Registration successful')
+    console.log('=== REGISTRATION DEBUG END ===')
 
     return NextResponse.json(
       {
