@@ -6,6 +6,8 @@
   NEXT_TELEMETRY_DISABLED = "1"
   NODE_VERSION = "18"
   NPM_FLAGS = "--legacy-peer-deps"
+  SECRETS_SCAN_ENABLED = "false"
+  SECRETS_SCAN_OMIT_PATHS = ".next/**/*"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
