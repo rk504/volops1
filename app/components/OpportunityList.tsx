@@ -41,7 +41,6 @@ interface OpportunityListProps {
 export default function OpportunityList({ opportunities, onRegistrationComplete }: OpportunityListProps) {
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null)
   const [registrationSuccess, setRegistrationSuccess] = useState<{title: string} | null>(null)
-  const [deregisterOpportunity, setDeregisterOpportunity] = useState<Opportunity | null>(null)
   const [userRegistrations, setUserRegistrations] = useState<Set<string>>(new Set())
   const { user, session } = useAuth()
   const router = useRouter()
@@ -132,19 +131,9 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
       router.push('/auth')
       return
     }
-    
-    // If already registered, show toast and return
-    if (userRegistrations.has(opportunityId)) {
-      toast({
-        title: "Already Registered",
-        description: "You are already registered for this event",
-        variant: "default"
-      })
-      return
-    }
 
     try {
-      const response = await fetch(`/api/events/${opportunityId}/register`, {
+      const response = await fetch(`/api/events/${opportunityId}/toggle`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -159,73 +148,38 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
       const data = await response.json()
       
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to register')
+        throw new Error(data.error || 'Failed to update registration')
       }
 
-      // Update local state
+      // Update local state based on the new status
       setUserRegistrations(prev => {
         const next = new Set(prev)
-        next.add(opportunityId)
+        if (data.registration.status === 'active') {
+          next.add(opportunityId)
+        } else {
+          next.delete(opportunityId)
+        }
         return next
       })
 
-      // Show success dialog
-      setRegistrationSuccess({ title })
+      // Show success message
+      toast({
+        title: 'Success',
+        description: data.message,
+        variant: 'default',
+      })
+
+      if (data.registration.status === 'active') {
+        setRegistrationSuccess({ title })
+      }
+      
       onRegistrationComplete()
       
     } catch (error: any) {
       toast({
-        title: "Registration Failed",
-        description: error.message || 'Failed to register for event',
+        title: "Action Failed",
+        description: error.message || 'Failed to update registration',
         variant: "destructive"
-      })
-    }
-  }
-
-  const handleDeregister = async (opportunityId: string, title: string) => {
-    const opportunity = opportunities.find(opp => opp.id === opportunityId)
-    if (opportunity) {
-      setDeregisterOpportunity(opportunity)
-    }
-  }
-
-  const confirmDeregister = async () => {
-    if (!deregisterOpportunity) return
-
-    try {
-      const response = await fetch(`/api/events/${deregisterOpportunity.id}/deregister`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      })
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to deregister')
-      }
-
-      // Update local state
-      setUserRegistrations(prev => {
-        const next = new Set(prev)
-        next.delete(deregisterOpportunity.id)
-        return next
-      })
-
-      toast({
-        title: 'Success',
-        description: `You have been deregistered from ${deregisterOpportunity.title}`,
-        variant: 'default',
-      })
-
-      setDeregisterOpportunity(null)
-      onRegistrationComplete()
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to deregister from event',
-        variant: 'destructive',
       })
     }
   }
@@ -265,23 +219,13 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
                       {opportunity.participant_count >= opportunity.max_participants && (
                         <Badge variant="destructive">Full</Badge>
                       )}
-                      {userRegistrations.has(opportunity.id) ? (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => handleDeregister(opportunity.id, opportunity.title)}
-                        >
-                          Registered
-                        </Button>
-                      ) : (
-                        <Button
-                          variant={opportunity.participant_count >= opportunity.max_participants ? "secondary" : "default"}
-                          onClick={() => handleRegister(opportunity.id, opportunity.title)}
-                          disabled={opportunity.participant_count >= opportunity.max_participants}
-                        >
-                          {opportunity.participant_count >= opportunity.max_participants ? 'Full' : 'Register'}
-                        </Button>
-                      )}
+                      <Button
+                        variant={userRegistrations.has(opportunity.id) ? "secondary" : "default"}
+                        onClick={() => handleRegister(opportunity.id, opportunity.title)}
+                        disabled={opportunity.participant_count >= opportunity.max_participants && !userRegistrations.has(opportunity.id)}
+                      >
+                        {userRegistrations.has(opportunity.id) ? 'Registered' : 'Register'}
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -301,14 +245,6 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
           title={registrationSuccess.title}
         />
       )}
-
-      <ConfirmDialog
-        isOpen={!!deregisterOpportunity}
-        onClose={() => setDeregisterOpportunity(null)}
-        onConfirm={confirmDeregister}
-        title="Confirm Deregistration"
-        description={`Are you sure you want to deregister from ${deregisterOpportunity?.title}? This action cannot be undone. Once you deregister, you will not be able to re-register for this event.`}
-      />
     </>
   )
 }

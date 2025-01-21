@@ -3,20 +3,18 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from '@netlify/functions'
 
 export const handler: Handler = async (event, context) => {
-  // Extract the event ID and action from the path
+  // Extract the event ID from the path
   const path = event.path.replace('/.netlify/functions/api/', '')
-  console.log('Path:', path) // Debug log
-  const pathParts = path.split('/')
-  const eventId = pathParts[1] // events/[eventId]/register -> [eventId]
-  const action = pathParts[2] // events/[eventId]/register -> register
-
-  if (!eventId || !action) {
-    console.log('Invalid path parts:', { pathParts, eventId, action }) // Debug log
+  console.log('Path:', path)
+  const match = path.match(/^events\/([^\/]+)\/toggle$/)
+  if (!match) {
+    console.log('Path does not match expected pattern:', path)
     return {
       statusCode: 400,
       body: JSON.stringify({ error: 'Invalid request path' })
     }
   }
+  const [, eventId] = match
 
   // Create Supabase client
   const supabase = createServerClient(
@@ -29,12 +27,8 @@ export const handler: Handler = async (event, context) => {
             .find(c => c.trim().startsWith(`${name}=`))
             ?.split('=')[1]
         },
-        set(name: string, value: string, options: any) {
-          // Handle cookie setting if needed
-        },
-        remove(name: string, options: any) {
-          // Handle cookie removal if needed
-        },
+        set(name: string, value: string, options: any) {},
+        remove(name: string, options: any) {},
       },
     }
   )
@@ -49,29 +43,44 @@ export const handler: Handler = async (event, context) => {
       }
     }
 
-    if (action === 'register') {
-      // Handle registration
-      const body = JSON.parse(event.body || '{}')
-      const { name, email } = body
+    // Check if user has an existing registration
+    const { data: existingReg, error: checkError } = await supabase
+      .from('registrations')
+      .select('*')
+      .eq('event_id', eventId)
+      .eq('user_id', session.user.id)
+      .single()
 
-      // Check if already registered
-      const { data: existingReg, error: checkError } = await supabase
+    if (existingReg) {
+      // Toggle existing registration between active and cancelled
+      const newStatus = existingReg.status === 'active' ? 'cancelled' : 'active'
+      const { data: updatedReg, error: updateError } = await supabase
         .from('registrations')
-        .select('id')
-        .eq('event_id', eventId)
-        .eq('user_id', session.user.id)
-        .eq('status', 'active')
+        .update({ status: newStatus })
+        .eq('id', existingReg.id)
+        .select()
         .single()
 
-      if (existingReg) {
+      if (updateError) {
         return {
-          statusCode: 400,
-          body: JSON.stringify({ error: 'Already registered for this event' })
+          statusCode: 500,
+          body: JSON.stringify({ error: updateError.message })
         }
       }
 
-      // Create registration
-      const { data: registration, error: regError } = await supabase
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ 
+          message: newStatus === 'active' ? 'Successfully registered' : 'Successfully deregistered',
+          registration: updatedReg
+        })
+      }
+    } else {
+      // Create new registration if none exists
+      const body = JSON.parse(event.body || '{}')
+      const { name = session.user.email?.split('@')[0], email = session.user.email } = body
+
+      const { data: newReg, error: createError } = await supabase
         .from('registrations')
         .insert([{
           user_id: session.user.id,
@@ -83,44 +92,20 @@ export const handler: Handler = async (event, context) => {
         .select()
         .single()
 
-      if (regError) {
+      if (createError) {
         return {
           statusCode: 500,
-          body: JSON.stringify({ error: regError.message })
+          body: JSON.stringify({ error: createError.message })
         }
       }
 
       return {
         statusCode: 200,
-        body: JSON.stringify({ message: 'Successfully registered', registration })
+        body: JSON.stringify({ 
+          message: 'Successfully registered',
+          registration: newReg
+        })
       }
-    }
-
-    if (action === 'deregister') {
-      // Handle deregistration
-      const { error: updateError } = await supabase
-        .from('registrations')
-        .update({ status: 'cancelled' })
-        .eq('event_id', eventId)
-        .eq('user_id', session.user.id)
-        .eq('status', 'active')
-
-      if (updateError) {
-        return {
-          statusCode: 500,
-          body: JSON.stringify({ error: updateError.message })
-        }
-      }
-
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ message: 'Successfully deregistered' })
-      }
-    }
-
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: 'Invalid action' })
     }
 
   } catch (error) {
