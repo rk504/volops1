@@ -134,7 +134,7 @@ export default function Home() {
               />
               <EmailSignup />
             </div>
-            <div className="w-1/4 h-[calc(100vh-8rem)] mt-8 mr-6 pl-12">
+            <div className="w-1/4 h-[calc(100vh-8rem)] mt-8 mr-6 pl-2">
               <div className="relative h-full">
                 <Suspense fallback={<div className="w-full h-full flex items-center justify-center">Loading map...</div>}>
                   <Map opportunities={filteredOpportunities} />
