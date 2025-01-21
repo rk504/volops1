@@ -5,9 +5,13 @@ import { cookies } from '@netlify/functions'
 export const handler: Handler = async (event, context) => {
   // Extract the event ID and action from the path
   const path = event.path.replace('/.netlify/functions/api/', '')
-  const [, , eventId, action] = path.split('/')
+  console.log('Path:', path) // Debug log
+  const pathParts = path.split('/')
+  const eventId = pathParts[1] // events/[eventId]/register -> [eventId]
+  const action = pathParts[2] // events/[eventId]/register -> register
 
   if (!eventId || !action) {
+    console.log('Invalid path parts:', { pathParts, eventId, action }) // Debug log
     return {
       statusCode: 400,
       body: JSON.stringify({ error: 'Invalid request path' })
