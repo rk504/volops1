@@ -5,7 +5,7 @@ export const handler: Handler = async (event, context) => {
   // Extract the event ID from the path
   const path = event.path.replace('/.netlify/functions/api/', '')
   console.log('Path:', path)
-  const match = path.match(/^events\/([^\/]+)\/toggle$/)
+  const match = path.match(/^events\/([a-f0-9-]+)\/toggle$/)
   if (!match) {
     console.log('Path does not match expected pattern:', path)
     return {
@@ -14,6 +14,8 @@ export const handler: Handler = async (event, context) => {
     }
   }
   const [, eventId] = match
+
+  console.log('Extracted event ID:', eventId)
 
   // Create Supabase client
   const supabase = createServerClient(
