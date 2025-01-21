@@ -14,7 +14,6 @@ interface RegistrationFormProps {
 
 export default function RegistrationForm({ isOpen, onClose, onSubmit, title }: RegistrationFormProps) {
   const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const { session } = useAuth()
 
@@ -31,9 +30,12 @@ export default function RegistrationForm({ isOpen, onClose, onSubmit, title }: R
       return
     }
 
-    onSubmit({ name, email, phone })
+    onSubmit({ 
+      name, 
+      email: session.user.email || '', 
+      phone 
+    })
     setName('')
-    setEmail('')
     setPhone('')
   }
 
@@ -53,16 +55,6 @@ export default function RegistrationForm({ isOpen, onClose, onSubmit, title }: R
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>

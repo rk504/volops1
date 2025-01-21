@@ -11,6 +11,7 @@ import ConfirmDialog from './ConfirmDialog'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import RegistrationSuccess from './RegistrationSuccess'
 
 interface Opportunity {
   id: string
@@ -39,9 +40,10 @@ interface OpportunityListProps {
 
 export default function OpportunityList({ opportunities, onRegistrationComplete }: OpportunityListProps) {
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null)
+  const [registrationSuccess, setRegistrationSuccess] = useState<{title: string} | null>(null)
   const [deregisterOpportunity, setDeregisterOpportunity] = useState<Opportunity | null>(null)
   const [userRegistrations, setUserRegistrations] = useState<Set<string>>(new Set())
-  const { user } = useAuth()
+  const { user, session } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
 
@@ -121,7 +123,7 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
   }
 
   const handleRegister = async (opportunityId: string, title: string) => {
-    if (!user) {
+    if (!user || !session) {
       toast({
         title: "Authentication Required",
         description: "Please sign in to register for events",
@@ -140,8 +142,44 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
       })
       return
     }
-    
-    setSelectedOpportunity(opportunities.find(opp => opp.id === opportunityId) || null)
+
+    try {
+      const response = await fetch(`/api/events/${opportunityId}/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
+          email: user.email,
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to register')
+      }
+
+      // Update local state
+      setUserRegistrations(prev => {
+        const next = new Set(prev)
+        next.add(opportunityId)
+        return next
+      })
+
+      // Show success dialog
+      setRegistrationSuccess({ title })
+      onRegistrationComplete()
+      
+    } catch (error: any) {
+      toast({
+        title: "Registration Failed",
+        description: error.message || 'Failed to register for event',
+        variant: "destructive"
+      })
+    }
   }
 
   const handleDeregister = async (opportunityId: string, title: string) => {
@@ -184,61 +222,6 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
         title: 'Error',
         description: error.message || 'Failed to deregister from event',
         variant: 'destructive',
-      })
-    }
-  }
-
-  const handleRegistrationSubmit = async (data: { name: string; email: string; phone?: string }) => {
-    if (!selectedOpportunity) return
-
-    try {
-      console.log('Attempting registration for event:', {
-        eventId: selectedOpportunity.id,
-        formData: data
-      })
-
-      const response = await fetch(`/api/events/${selectedOpportunity.id}/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(data)
-      })
-      
-      const responseData = await response.json()
-      
-      if (!response.ok) {
-        console.error('Registration failed:', responseData)
-        throw new Error(responseData.error || 'Failed to register')
-      }
-
-      // Update local state
-      setUserRegistrations(prev => {
-        const next = new Set(prev)
-        next.add(selectedOpportunity.id)
-        return next
-      })
-
-      toast({
-        title: "You're registered! 🎉",
-        description: "Expect an email with event details 48 hours before your event. Check your dashboard to see your upcoming events.",
-        variant: "default"
-      })
-
-      // Close the form and refresh the opportunities data
-      setSelectedOpportunity(null)
-      onRegistrationComplete()
-      
-      // Redirect to dashboard after a short delay
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 2000)
-    } catch (error: any) {
-      toast({
-        title: "Registration Failed",
-        description: error.message || 'Failed to register for event',
-        variant: "destructive"
       })
     }
   }
@@ -304,12 +287,16 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
         ))}
       </div>
 
-      <RegistrationForm
-        isOpen={!!selectedOpportunity}
-        onClose={() => setSelectedOpportunity(null)}
-        onSubmit={handleRegistrationSubmit}
-        title={selectedOpportunity?.title || ''}
-      />
+      {registrationSuccess && (
+        <RegistrationSuccess
+          isOpen={!!registrationSuccess}
+          onClose={() => {
+            setRegistrationSuccess(null)
+            router.push('/dashboard')
+          }}
+          title={registrationSuccess.title}
+        />
+      )}
 
       <ConfirmDialog
         isOpen={!!deregisterOpportunity}
