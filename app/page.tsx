@@ -9,6 +9,8 @@ import OpportunityList from './components/OpportunityList'
 import EmailSignup from './components/EmailSignup'
 import { fetchOpportunities, Opportunity } from '../lib/data'
 import { supabase } from '@/lib/supabase'
+import Image from 'next/image'
+import Link from 'next/link'
 
 // Dynamically import the Map component with no SSR
 const Map = dynamic(() => import('./components/Map'), { 
@@ -104,30 +106,32 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar 
-          filters={filters}
-          onCategoryChange={(category, checked) => updateFilters('categories', category, checked)}
-          onAvailabilityChange={(time, checked) => updateFilters('availability', time, checked)}
-        />
-        <main className="flex-1 flex overflow-y-auto">
-          <div className="flex-1 flex flex-col">
-            <OpportunityList 
-              opportunities={filteredOpportunities} 
-              onRegistrationComplete={refreshOpportunities}
-            />
-            <EmailSignup />
-          </div>
-          <div className="w-1/4 h-[calc(100vh-8rem)] mt-8 mr-6">
-            <div className="relative h-full">
-              <Suspense fallback={<div className="w-full h-full flex items-center justify-center">Loading map...</div>}>
-                <Map opportunities={filteredOpportunities} />
-              </Suspense>
+    <div>
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <div className="flex flex-1 overflow-hidden">
+          <Sidebar 
+            filters={filters}
+            onCategoryChange={(category, checked) => updateFilters('categories', category, checked)}
+            onAvailabilityChange={(time, checked) => updateFilters('availability', time, checked)}
+          />
+          <main className="flex-1 flex overflow-y-auto">
+            <div className="flex-1 flex flex-col">
+              <OpportunityList 
+                opportunities={filteredOpportunities} 
+                onRegistrationComplete={refreshOpportunities}
+              />
+              <EmailSignup />
             </div>
-          </div>
-        </main>
+            <div className="w-1/4 h-[calc(100vh-8rem)] mt-8 mr-6">
+              <div className="relative h-full">
+                <Suspense fallback={<div className="w-full h-full flex items-center justify-center">Loading map...</div>}>
+                  <Map opportunities={filteredOpportunities} />
+                </Suspense>
+              </div>
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   )

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Search } from 'lucide-react'
@@ -19,7 +20,15 @@ export default function Header() {
 
   return (
     <header className="bg-white border-b border-gray-200 py-4 px-6 flex items-center justify-between">
-      <Link href="/" className="text-2xl font-bold text-blue-600">Volops</Link>
+      <Link href="/" className="inline-block">
+        <Image
+          src="/easyvol-logo.png"
+          alt="EasyVol Logo"
+          width={120}
+          height={40}
+          className="object-contain"
+        />
+      </Link>
       <div className="flex items-center space-x-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />

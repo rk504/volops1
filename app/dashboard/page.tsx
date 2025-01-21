@@ -5,6 +5,8 @@ import { useAuth } from '@/lib/auth/AuthContext'
 import { supabase } from '@/lib/supabase'
 import OpportunityList from '../components/OpportunityList'
 import { Opportunity } from '@/lib/data'
+import Image from 'next/image'
+import Link from 'next/link'
 
 export default function DashboardPage() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([])
@@ -93,22 +95,37 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-8">Your Upcoming Events</h1>
-      
-      {opportunities.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-lg text-gray-600 mb-4">You haven't registered for any events yet.</p>
-          <p className="text-gray-500">
-            Check out our <a href="/" className="text-blue-500 hover:underline">opportunities page</a> to find events!
-          </p>
+    <div>
+      <div className="border-b">
+        <div className="container mx-auto py-4">
+          <Link href="/" className="inline-block">
+            <Image
+              src="/easyvol-logo.png"
+              alt="EasyVol Logo"
+              width={120}
+              height={40}
+              className="object-contain"
+            />
+          </Link>
         </div>
-      ) : (
-        <OpportunityList 
-          opportunities={opportunities} 
-          onRegistrationComplete={fetchOpportunities}
-        />
-      )}
+      </div>
+      <div className="container mx-auto py-8">
+        <h1 className="text-3xl font-bold mb-8">Your Upcoming Events</h1>
+        
+        {opportunities.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-lg text-gray-600 mb-4">You haven't registered for any events yet.</p>
+            <p className="text-gray-500">
+              Check out our <a href="/" className="text-blue-500 hover:underline">opportunities page</a> to find events!
+            </p>
+          </div>
+        ) : (
+          <OpportunityList 
+            opportunities={opportunities} 
+            onRegistrationComplete={fetchOpportunities}
+          />
+        )}
+      </div>
     </div>
   )
 } 
