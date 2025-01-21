@@ -60,10 +60,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
-    router.refresh()
-    router.push('/')
+    try {
+      // First clear any active registrations for the current user
+      if (user) {
+        const { error: updateError } = await supabase
+          .from('registrations')
+          .update({ status: 'inactive' })
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+
+        if (updateError) {
+          console.error('Error clearing registrations:', updateError)
+        }
+      }
+
+      // Then sign out
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+
+      // Clear local state and redirect
+      setUser(null)
+      router.refresh()
+      router.push('/')
+    } catch (error) {
+      console.error('Error during sign out:', error)
+      throw error
+    }
   }
 
   return (
@@ -75,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export const useAuth = () => {
   const context = useContext(AuthContext)
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider')
   }
   return context

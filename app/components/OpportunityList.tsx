@@ -49,7 +49,8 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
   useEffect(() => {
     async function fetchUserRegistrations() {
       if (!user) {
-        console.log('No user logged in')
+        console.log('No user logged in, clearing registrations')
+        setUserRegistrations(new Set())
         return
       }
 
