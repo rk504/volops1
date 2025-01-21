@@ -41,6 +41,9 @@ export default function Header() {
         <nav>
           {user ? (
             <>
+              <Link href="/">
+                <Button variant="ghost">Home</Button>
+              </Link>
               <Link href="/dashboard">
                 <Button variant="ghost">Dashboard</Button>
               </Link>

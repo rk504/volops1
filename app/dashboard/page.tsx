@@ -5,8 +5,7 @@ import { useAuth } from '@/lib/auth/AuthContext'
 import { supabase } from '@/lib/supabase'
 import OpportunityList from '../components/OpportunityList'
 import { Opportunity } from '@/lib/data'
-import Image from 'next/image'
-import Link from 'next/link'
+import Header from '../components/Header'
 
 export default function DashboardPage() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([])
@@ -96,19 +95,7 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <div className="border-b">
-        <div className="container mx-auto py-4">
-          <Link href="/" className="inline-block">
-            <Image
-              src="/easyvol-logo.png"
-              alt="EasyVol Logo"
-              width={120}
-              height={40}
-              className="object-contain"
-            />
-          </Link>
-        </div>
-      </div>
+      <Header />
       <div className="container mx-auto py-8">
         <h1 className="text-3xl font-bold mb-8">Your Upcoming Events</h1>
         
