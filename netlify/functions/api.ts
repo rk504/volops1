@@ -1,6 +1,5 @@
 import { Handler } from '@netlify/functions'
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from '@netlify/functions'
 
 export const handler: Handler = async (event, context) => {
   // Extract the event ID from the path
@@ -43,7 +42,7 @@ export const handler: Handler = async (event, context) => {
       }
     }
 
-    // Check if user has an existing registration
+    // Check for existing registration
     const { data: existingReg, error: checkError } = await supabase
       .from('registrations')
       .select('*')
@@ -72,21 +71,18 @@ export const handler: Handler = async (event, context) => {
         statusCode: 200,
         body: JSON.stringify({ 
           message: newStatus === 'active' ? 'Successfully registered' : 'Successfully deregistered',
-          registration: updatedReg
+          status: newStatus
         })
       }
     } else {
-      // Create new registration if none exists
-      const body = JSON.parse(event.body || '{}')
-      const { name = session.user.email?.split('@')[0], email = session.user.email } = body
-
+      // Create new registration
       const { data: newReg, error: createError } = await supabase
         .from('registrations')
         .insert([{
           user_id: session.user.id,
           event_id: eventId,
-          name,
-          email,
+          name: session.user.email?.split('@')[0] || '',
+          email: session.user.email || '',
           status: 'active'
         }])
         .select()
@@ -103,7 +99,7 @@ export const handler: Handler = async (event, context) => {
         statusCode: 200,
         body: JSON.stringify({ 
           message: 'Successfully registered',
-          registration: newReg
+          status: 'active'
         })
       }
     }

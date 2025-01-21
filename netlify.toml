@@ -9,6 +9,11 @@
   status = 200
   force = true
 
+  from = "/api/events/:eventId/toggle"
+  to = "/.netlify/functions/api"
+  status = 200
+  force = true
+
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["@node-rs/bcrypt", "@node-rs/helper"]
@@ -16,7 +21,7 @@
 
 [build.environment]
   NEXT_USE_NETLIFY_EDGE = "true"
-  NEXT_PRIVATE_TARGET = "server"
+  NEXT_PRIVATE_TARGET = "experimental-serverless-app"
   NEXT_TELEMETRY_DISABLED = "1"
   SECRETS_SCAN_ENABLED = "false"
   SECRETS_SCAN_OMIT_PATHS = ".next/**/*"
