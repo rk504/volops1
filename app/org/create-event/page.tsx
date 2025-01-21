@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { supabase } from '@/lib/supabase'
-import Header from '@/components/Header'
+import Header from '../../components/Header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'

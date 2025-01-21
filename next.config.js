@@ -7,9 +7,6 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true, // Temporarily ignore TS errors during build
   },
-  experimental: {
-    serverActions: true,
-  },
   async rewrites() {
     return {
       beforeFiles: [

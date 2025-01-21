@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { supabase } from '@/lib/supabase'
-import Header from '@/components/Header'
+import Header from '../../components/Header'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/use-toast'
 import Link from 'next/link'
