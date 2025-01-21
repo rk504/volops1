@@ -8,7 +8,7 @@ const nextConfig = {
     ignoreBuildErrors: true, // Temporarily ignore TS errors during build
   },
   experimental: {
-    missingSuspenseWithCSRError: false,
+    serverActions: true,
   },
   async rewrites() {
     return {

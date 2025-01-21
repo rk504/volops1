@@ -47,6 +47,9 @@ export default function Header() {
               <Link href="/dashboard">
                 <Button variant="ghost">Dashboard</Button>
               </Link>
+              <Link href="/org/dashboard">
+                <Button variant="ghost">Organization</Button>
+              </Link>
               <Link href="/profile">
                 <Button variant="ghost">Profile</Button>
               </Link>
