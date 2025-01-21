@@ -4,9 +4,6 @@ const nextConfig = {
   images: {
     domains: ['images.unsplash.com'],
   },
-  experimental: {
-    serverActions: true,
-  },
   typescript: {
     ignoreBuildErrors: true, // Temporarily ignore TS errors during build
   },
