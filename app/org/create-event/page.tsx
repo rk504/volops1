@@ -28,7 +28,7 @@ export default function CreateEventPage() {
     maxParticipants: '',
     dayOfWeek: '',
     startTime: '',
-    location: '',
+    zipCode: '',
     latitude: 40.7128,
     longitude: -74.0060,
     category: ''
@@ -56,7 +56,7 @@ export default function CreateEventPage() {
           max_participants: parseInt(formData.maxParticipants),
           day: formData.dayOfWeek,
           time: formData.startTime,
-          location: formData.location,
+          location: formData.zipCode,
           latitude: formData.latitude,
           longitude: formData.longitude,
           category: formData.category,
@@ -66,7 +66,8 @@ export default function CreateEventPage() {
 
       if (error) throw error
 
-      setShowSuccess(true)
+      sessionStorage.setItem('eventCreated', 'true')
+      router.push('/org/create-event/success')
     } catch (error) {
       console.error('Error creating event:', error)
       toast({
@@ -79,10 +80,10 @@ export default function CreateEventPage() {
     }
   }
 
-  const handleLocationSelect = (location: { address: string; latitude: number; longitude: number }) => {
+  const handleLocationSelect = (location: { zipCode: string; latitude: number; longitude: number }) => {
     setFormData(prev => ({
       ...prev,
-      location: location.address,
+      zipCode: location.zipCode,
       latitude: location.latitude,
       longitude: location.longitude
     }))
@@ -204,9 +205,9 @@ export default function CreateEventPage() {
             <LocationSearch
               onLocationSelect={handleLocationSelect}
               initialLocation={
-                formData.location
+                formData.zipCode
                   ? {
-                      address: formData.location,
+                      zipCode: formData.zipCode,
                       latitude: formData.latitude,
                       longitude: formData.longitude,
                     }
@@ -245,7 +246,7 @@ export default function CreateEventPage() {
                 maxParticipants: '',
                 dayOfWeek: '',
                 startTime: '',
-                location: '',
+                zipCode: '',
                 latitude: 40.7128,
                 longitude: -74.0060,
                 category: ''

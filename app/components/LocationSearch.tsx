@@ -4,9 +4,9 @@ import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Search } from 'lucide-react'
-import debounce from 'lodash/debounce'
 import dynamic from 'next/dynamic'
 import type { ChangeEvent } from 'react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface DynamicMapProps {
   center: [number, number]
@@ -15,21 +15,15 @@ interface DynamicMapProps {
 
 interface LocationSearchProps {
   onLocationSelect: (location: {
-    address: string
+    zipCode: string
     latitude: number
     longitude: number
   }) => void
   initialLocation?: {
-    address: string
+    zipCode: string
     latitude: number
     longitude: number
   }
-}
-
-interface SearchResult {
-  display_name: string
-  lat: string
-  lon: string
 }
 
 // Dynamically import the map component with no SSR
@@ -43,82 +37,78 @@ const DynamicMap = dynamic<DynamicMapProps>(() => import('./DynamicMap'), {
 })
 
 export default function LocationSearch({ onLocationSelect, initialLocation }: LocationSearchProps) {
-  const [searchQuery, setSearchQuery] = useState(initialLocation?.address || '')
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
-  const [showResults, setShowResults] = useState(false)
+  const [zipCode, setZipCode] = useState(initialLocation?.zipCode || '')
+  const [error, setError] = useState('')
   const [selectedLocation, setSelectedLocation] = useState(initialLocation || {
-    address: '',
+    zipCode: '',
     latitude: 40.7128,
     longitude: -74.0060
   })
 
-  // Debounced search function
-  const searchAddress = debounce(async (query: string) => {
-    if (!query) {
-      setSearchResults([])
+  const handleZipCodeSearch = async () => {
+    if (!zipCode.match(/^\d{5}$/)) {
+      setError('Please enter a valid 5-digit ZIP code')
       return
     }
 
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`
+        `https://api.zippopotam.us/us/${zipCode}`
       )
-      const data = await response.json()
-      setSearchResults(data)
-      setShowResults(true)
-    } catch (error) {
-      console.error('Error searching address:', error)
-      setSearchResults([])
-    }
-  }, 300)
+      
+      if (!response.ok) {
+        throw new Error('Invalid ZIP code')
+      }
 
-  const handleSelect = (result: SearchResult) => {
-    const location = {
-      address: result.display_name,
-      latitude: parseFloat(result.lat),
-      longitude: parseFloat(result.lon)
+      const data = await response.json()
+      const location = {
+        zipCode,
+        latitude: parseFloat(data.places[0].latitude),
+        longitude: parseFloat(data.places[0].longitude)
+      }
+      
+      setSelectedLocation(location)
+      setError('')
+      onLocationSelect(location)
+    } catch (error) {
+      console.error('Error searching ZIP code:', error)
+      setError('Invalid ZIP code. Please try again.')
     }
-    setSelectedLocation(location)
-    setSearchQuery(result.display_name)
-    setShowResults(false)
-    onLocationSelect(location)
   }
 
   return (
     <div className="space-y-4">
       <div className="relative">
-        <div className="relative">
+        <div className="flex gap-2">
           <Input
             type="text"
-            placeholder="Search for an address..."
-            value={searchQuery}
+            placeholder="Enter ZIP code..."
+            value={zipCode}
+            maxLength={5}
             onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              setSearchQuery(e.target.value)
-              searchAddress(e.target.value)
+              const value = e.target.value.replace(/\D/g, '').slice(0, 5)
+              setZipCode(value)
+              setError('')
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleZipCodeSearch()
+              }
             }}
           />
-          <Button
-            size="icon"
-            variant="ghost"
-            className="absolute right-0 top-0"
-            onClick={() => setShowResults(!showResults)}
+          <Button 
+            onClick={handleZipCodeSearch}
+            disabled={zipCode.length !== 5}
           >
-            <Search className="h-4 w-4" />
+            <Search className="h-4 w-4 mr-2" />
+            Find
           </Button>
         </div>
 
-        {showResults && searchResults.length > 0 && (
-          <div className="absolute z-10 w-full bg-white border rounded-md shadow-lg mt-1">
-            {searchResults.map((result, index) => (
-              <button
-                key={index}
-                className="w-full px-4 py-2 text-left hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-                onClick={() => handleSelect(result)}
-              >
-                {result.display_name}
-              </button>
-            ))}
-          </div>
+        {error && (
+          <Alert variant="destructive" className="mt-2">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
       </div>
 
