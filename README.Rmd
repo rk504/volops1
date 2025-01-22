@@ -1,0 +1,74 @@
+# EasyVol - Volunteer Opportunity Marketplace
+
+## Overview
+EasyVol is a two-sided marketplace connecting volunteers with organizations offering volunteer opportunities. The platform simplifies the process of finding and managing volunteer events, making it easier for both volunteers to discover meaningful opportunities and for organizations to manage their volunteer programs.
+
+🌐 **Live Beta**: [https://easyvol.netlify.app/](https://easyvol.netlify.app/)  
+📧 **Contact**: easyvolapp@gmail.com
+
+## Features
+
+### For Volunteers
+- Browse volunteer opportunities on an interactive map
+- Filter events by time of day and availability
+- Simple one-click registration process
+- Personal dashboard to track registered events
+- Email reminders for upcoming volunteer sessions
+
+### For Organizations
+- Create and manage volunteer events
+- Track participant registrations
+- Set event capacity and details
+- Interactive map for location selection
+- Organization dashboard with event analytics
+
+## Technical Stack
+
+### Frontend
+- Next.js 14.2.23
+- React with TypeScript
+- Shadcn/ui components
+- OpenStreetMap with Leaflet for mapping
+- Client-side rendering for interactive components
+
+### Backend
+- Supabase for authentication and database
+- Netlify Functions for API endpoints
+- Row Level Security (RLS) for data protection
+- PostgreSQL views for efficient data aggregation
+
+### Deployment
+- Netlify for hosting and serverless functions
+- Continuous deployment from main branch
+- Environment variable management
+- API route handling through Netlify Functions
+
+## Local Development
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Set up environment variables:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+4. Run the development server:
+   ```bash
+   npm run dev
+   ```
+5. Open [http://localhost:3000](http://localhost:3000)
+
+## Contributing
+
+We welcome contributions! Please feel free to submit a Pull Request.
+
+## Contact
+
+For questions or feedback, reach out to us at easyvolapp@gmail.com
+
+## License
+
+MIT License - see LICENSE file for details 
