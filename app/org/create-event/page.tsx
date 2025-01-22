@@ -17,7 +17,7 @@ import dynamic from 'next/dynamic'
 import debounce from 'lodash/debounce'
 
 // Create a dynamic map component to handle all Leaflet-related code
-const DynamicMap = dynamic(() => import('@/components/DynamicMap'), {
+const DynamicMap = dynamic(() => import('../../components/DynamicMap'), {
   ssr: false,
   loading: () => (
     <div className="h-[300px] bg-gray-100 rounded-lg flex items-center justify-center">
