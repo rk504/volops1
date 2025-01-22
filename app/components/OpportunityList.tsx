@@ -27,6 +27,7 @@ interface Opportunity {
   date: string
   time: string
   day: string
+  duration: number
   recurring: boolean
   max_participants: number
   participant_count: number
@@ -187,62 +188,81 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
   return (
     <>
       <div className="space-y-4">
-        {opportunities.map((opportunity) => (
-          <Card key={opportunity.id}>
-            <CardContent className="p-6">
-              <div className="flex gap-4">
-                <div className="w-32 h-32 relative flex-shrink-0">
-                  <Image
-                    src={opportunity.image}
-                    alt={opportunity.title}
-                    fill
-                    className="object-cover rounded-lg"
-                    priority={opportunities.indexOf(opportunity) === 0}
-                  />
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="text-lg font-semibold">{opportunity.title}</h3>
-                      <p className="text-sm text-gray-600">{opportunity.organization}</p>
-                    </div>
-                    <Badge variant="outline">
-                      {opportunity.day}s at {opportunity.time}
-                    </Badge>
+        {opportunities.map((opportunity) => {
+          if (!opportunity?.id) {
+            console.error('Invalid opportunity:', opportunity)
+            return null
+          }
+          
+          // Format duration
+          const hours = Math.floor(opportunity.duration / 60)
+          const minutes = opportunity.duration % 60
+          const durationText = hours > 0 
+            ? `${hours} hour${hours > 1 ? 's' : ''}${minutes > 0 ? ` ${minutes} min` : ''}`
+            : `${minutes} min`
+          
+          return (
+            <Card key={opportunity.id}>
+              <CardContent className="p-6">
+                <div className="flex gap-4">
+                  <div className="w-32 h-32 relative flex-shrink-0">
+                    <Image
+                      src={opportunity.image || '/placeholder-logo.png'}
+                      alt={opportunity.title || 'Event image'}
+                      fill
+                      className="object-cover rounded-lg"
+                      priority={opportunities.indexOf(opportunity) === 0}
+                    />
                   </div>
-                  <p className="text-sm text-gray-600 mb-4">{opportunity.description}</p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <Badge variant="secondary">
-                        {opportunity.participant_count} / {opportunity.max_participants} spots filled
-                      </Badge>
-                      {opportunity.participant_count >= opportunity.max_participants && (
-                        <Badge variant="destructive">Full</Badge>
-                      )}
-                      {userRegistrations.has(opportunity.id) ? (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => handleRegister(opportunity.id, opportunity.title)}
-                        >
-                          Registered
-                        </Button>
-                      ) : (
-                        <Button
-                          variant={opportunity.participant_count >= opportunity.max_participants ? "secondary" : "default"}
-                          onClick={() => handleRegister(opportunity.id, opportunity.title)}
-                          disabled={opportunity.participant_count >= opportunity.max_participants}
-                        >
-                          {opportunity.participant_count >= opportunity.max_participants ? 'Full' : 'Register'}
-                        </Button>
-                      )}
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="text-lg font-semibold">{opportunity.title}</h3>
+                        <p className="text-sm text-gray-600">{opportunity.organization}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <Badge variant="outline">
+                          {opportunity.day}s at {opportunity.time}
+                        </Badge>
+                        <Badge variant="secondary">
+                          Duration: {durationText}
+                        </Badge>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-4">{opportunity.description}</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <Badge variant="secondary">
+                          {opportunity.participant_count} / {opportunity.max_participants} spots filled
+                        </Badge>
+                        {opportunity.participant_count >= opportunity.max_participants && (
+                          <Badge variant="destructive">Full</Badge>
+                        )}
+                        {userRegistrations.has(opportunity.id) ? (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleRegister(opportunity.id, opportunity.title)}
+                          >
+                            Registered
+                          </Button>
+                        ) : (
+                          <Button
+                            variant={opportunity.participant_count >= opportunity.max_participants ? "secondary" : "default"}
+                            onClick={() => handleRegister(opportunity.id, opportunity.title)}
+                            disabled={opportunity.participant_count >= opportunity.max_participants}
+                          >
+                            {opportunity.participant_count >= opportunity.max_participants ? 'Full' : 'Register'}
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
 
       {registrationSuccess && (
