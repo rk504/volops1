@@ -17,7 +17,7 @@ import dynamic from 'next/dynamic'
 import debounce from 'lodash/debounce'
 
 // Create a dynamic map component to handle all Leaflet-related code
-const Map = dynamic(() => import('@/components/Map'), {
+const DynamicMap = dynamic(() => import('@/components/DynamicMap'), {
   ssr: false,
   loading: () => (
     <div className="h-[300px] bg-gray-100 rounded-lg flex items-center justify-center">
@@ -287,7 +287,7 @@ export default function CreateEventPage() {
               </div>
               <div className="h-[300px] mt-4 rounded-lg overflow-hidden">
                 {mounted && (
-                  <Map
+                  <DynamicMap
                     center={[formData.latitude, formData.longitude]}
                     marker={[formData.latitude, formData.longitude]}
                   />
