@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { supabase } from '@/lib/supabase'
 import Header from '../../components/Header'
@@ -13,20 +13,17 @@ import { useToast } from '@/components/ui/use-toast'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { CheckCircle2, Search } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { MapContainer, TileLayer, Marker } from 'react-leaflet'
-import 'leaflet/dist/leaflet.css'
-import L from 'leaflet'
+import dynamic from 'next/dynamic'
 import debounce from 'lodash/debounce'
 
-// Fix Leaflet default marker icon
-const icon = L.icon({
-  iconUrl: '/marker-icon.png',
-  iconRetinaUrl: '/marker-icon-2x.png',
-  shadowUrl: '/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+// Create a dynamic map component to handle all Leaflet-related code
+const Map = dynamic(() => import('@/components/Map'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[300px] bg-gray-100 rounded-lg flex items-center justify-center">
+      <p>Loading map...</p>
+    </div>
+  ),
 })
 
 export default function CreateEventPage() {
@@ -41,6 +38,7 @@ export default function CreateEventPage() {
     lon: number
   }>>([])
   const [showResults, setShowResults] = useState(false)
+  const [mounted, setMounted] = useState(false)
   
   const [formData, setFormData] = useState({
     title: '',
@@ -55,6 +53,10 @@ export default function CreateEventPage() {
     longitude: -74.0060,
     category: ''
   })
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const searchAddress = debounce(async (query: string) => {
     if (query.length < 3) {
@@ -284,20 +286,12 @@ export default function CreateEventPage() {
                 )}
               </div>
               <div className="h-[300px] mt-4 rounded-lg overflow-hidden">
-                <MapContainer
-                  center={[formData.latitude, formData.longitude]}
-                  zoom={13}
-                  style={{ height: '100%', width: '100%' }}
-                >
-                  <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                {mounted && (
+                  <Map
+                    center={[formData.latitude, formData.longitude]}
+                    marker={[formData.latitude, formData.longitude]}
                   />
-                  <Marker 
-                    position={[formData.latitude, formData.longitude]}
-                    icon={icon}
-                  />
-                </MapContainer>
+                )}
               </div>
             </div>
 
