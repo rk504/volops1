@@ -47,7 +47,6 @@ export default function CreateEventPage() {
     maxParticipants: '',
     dayOfWeek: '',
     startTime: '',
-    duration: '2', // Default 2 hours
     location: '',
     latitude: 40.7128,
     longitude: -74.0060,
@@ -114,7 +113,6 @@ export default function CreateEventPage() {
           max_participants: parseInt(formData.maxParticipants),
           day: formData.dayOfWeek,
           time: formData.startTime,
-          duration: parseInt(formData.duration) * 60, // Convert hours to minutes
           location: formData.location,
           latitude: formData.latitude,
           longitude: formData.longitude,
@@ -235,19 +233,6 @@ export default function CreateEventPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="duration">Duration (hours)</Label>
-              <Input
-                id="duration"
-                type="number"
-                min="0.5"
-                step="0.5"
-                value={formData.duration}
-                onChange={(e) => setFormData(prev => ({ ...prev, duration: e.target.value }))}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="location">Location</Label>
               <div className="relative">
                 <div className="flex gap-2">
@@ -350,7 +335,6 @@ export default function CreateEventPage() {
                   maxParticipants: '',
                   dayOfWeek: '',
                   startTime: '',
-                  duration: '2',
                   location: '',
                   latitude: 40.7128,
                   longitude: -74.0060,

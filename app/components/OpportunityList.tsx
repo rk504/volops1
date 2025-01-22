@@ -27,7 +27,6 @@ interface Opportunity {
   date: string
   time: string
   day: string
-  duration: number
   recurring: boolean
   max_participants: number
   participant_count: number
@@ -194,13 +193,6 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
             return null
           }
           
-          // Format duration
-          const hours = Math.floor(opportunity.duration / 60)
-          const minutes = opportunity.duration % 60
-          const durationText = hours > 0 
-            ? `${hours} hour${hours > 1 ? 's' : ''}${minutes > 0 ? ` ${minutes} min` : ''}`
-            : `${minutes} min`
-          
           return (
             <Card key={opportunity.id}>
               <CardContent className="p-6">
@@ -223,9 +215,6 @@ export default function OpportunityList({ opportunities, onRegistrationComplete 
                       <div className="flex flex-col items-end gap-2">
                         <Badge variant="outline">
                           {opportunity.day}s at {opportunity.time}
-                        </Badge>
-                        <Badge variant="secondary">
-                          Duration: {durationText}
                         </Badge>
                       </div>
                     </div>
