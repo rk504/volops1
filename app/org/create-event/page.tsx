@@ -4,46 +4,42 @@ import { useState } from 'react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { supabase } from '@/lib/supabase'
 import Header from '../../components/Header'
+import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/components/ui/use-toast'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { CheckCircle2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import LocationSearch from '../../components/LocationSearch'
 
 export default function CreateEventPage() {
   const { user } = useAuth()
   const { toast } = useToast()
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
+    organization: '',
     description: '',
     maxParticipants: '',
     dayOfWeek: '',
     startTime: '',
     location: '',
+    latitude: 40.7128,
+    longitude: -74.0060,
     category: ''
   })
-
-  const daysOfWeek = [
-    'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
-  ]
-
-  const timeSlots = Array.from({ length: 24 }, (_, i) => {
-    const hour = i % 12 || 12
-    const ampm = i < 12 ? 'AM' : 'PM'
-    return `${hour}:00 ${ampm}`
-  })
-
-  const categories = [
-    'Education', 'Environment', 'Health', 'Community Service', 'Animal Welfare'
-  ]
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) {
       toast({
-        title: "Error",
-        description: "You must be logged in to create an event",
+        title: "Authentication required",
+        description: "Please sign in to create an event.",
         variant: "destructive"
       })
       return
@@ -51,61 +47,31 @@ export default function CreateEventPage() {
 
     setLoading(true)
     try {
-      // Convert day and time to a Date object
-      const now = new Date()
-      const dayIndex = daysOfWeek.indexOf(formData.dayOfWeek)
-      const [hourStr, ampm] = formData.startTime.split(' ')
-      let hour = parseInt(hourStr.split(':')[0])
-      if (ampm === 'PM' && hour !== 12) hour += 12
-      if (ampm === 'AM' && hour === 12) hour = 0
-
-      // Find the next occurrence of the selected day
-      const date = new Date(now)
-      date.setHours(hour, 0, 0, 0)
-      while (date.getDay() !== dayIndex) {
-        date.setDate(date.getDate() + 1)
-      }
-
-      const eventData = {
-        title: formData.title,
-        description: formData.description,
-        max_participants: parseInt(formData.maxParticipants),
-        date: date.toISOString(),
-        location: formData.location,
-        category: formData.category,
-        organizer_id: user.id
-      }
-
       const { data, error } = await supabase
         .from('events')
-        .insert([eventData])
+        .insert([{
+          title: formData.title,
+          organization: formData.organization,
+          description: formData.description,
+          max_participants: parseInt(formData.maxParticipants),
+          day: formData.dayOfWeek,
+          time: formData.startTime,
+          location: formData.location,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
+          category: formData.category,
+          organizer_id: user.id
+        }])
         .select()
 
-      if (error) {
-        console.error('Supabase error:', error)
-        throw new Error(error.message)
-      }
+      if (error) throw error
 
-      toast({
-        title: "Success",
-        description: "Event created successfully",
-      })
-
-      // Reset form
-      setFormData({
-        title: '',
-        description: '',
-        maxParticipants: '',
-        dayOfWeek: '',
-        startTime: '',
-        location: '',
-        category: ''
-      })
+      setShowSuccess(true)
     } catch (error) {
       console.error('Error creating event:', error)
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create event. Please try again.",
+        description: "Failed to create event. Please try again.",
         variant: "destructive"
       })
     } finally {
@@ -113,21 +79,33 @@ export default function CreateEventPage() {
     }
   }
 
+  const handleLocationSelect = (location: { address: string; latitude: number; longitude: number }) => {
+    setFormData(prev => ({
+      ...prev,
+      location: location.address,
+      latitude: location.latitude,
+      longitude: location.longitude
+    }))
+  }
+
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-lg">Please sign in to create events</p>
+      <div className="container mx-auto p-4">
+        <Header />
+        <Card className="p-6 mt-8">
+          <h1 className="text-2xl font-bold mb-4">Create Event</h1>
+          <p>Please sign in to create an event.</p>
+        </Card>
       </div>
     )
   }
 
   return (
-    <div>
+    <div className="container mx-auto p-4">
       <Header />
-      <div className="container mx-auto py-8 max-w-2xl">
-        <h1 className="text-3xl font-bold mb-8">Create New Event</h1>
-        
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <Card className="p-6 mt-8">
+        <h1 className="text-2xl font-bold mb-4">Create Event</h1>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Event Title</Label>
             <Input
@@ -139,14 +117,42 @@ export default function CreateEventPage() {
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="organization">Organization Name</Label>
+            <Input
+              id="organization"
+              value={formData.organization}
+              onChange={(e) => setFormData(prev => ({ ...prev, organization: e.target.value }))}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
-            <textarea
+            <Input
               id="description"
-              className="w-full min-h-[100px] p-2 border rounded-md"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="category">Category</Label>
+            <Select
+              value={formData.category}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="education">Education</SelectItem>
+                <SelectItem value="environment">Environment</SelectItem>
+                <SelectItem value="health">Health</SelectItem>
+                <SelectItem value="community">Community</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
@@ -161,71 +167,95 @@ export default function CreateEventPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="dayOfWeek">Day of Week</Label>
-              <select
-                id="dayOfWeek"
-                className="w-full p-2 border rounded-md"
-                value={formData.dayOfWeek}
-                onChange={(e) => setFormData(prev => ({ ...prev, dayOfWeek: e.target.value }))}
-                required
-              >
-                <option value="">Select a day</option>
-                {daysOfWeek.map(day => (
-                  <option key={day} value={day}>{day}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="startTime">Start Time</Label>
-              <select
-                id="startTime"
-                className="w-full p-2 border rounded-md"
-                value={formData.startTime}
-                onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
-                required
-              >
-                <option value="">Select a time</option>
-                {timeSlots.map(time => (
-                  <option key={time} value={time}>{time}</option>
-                ))}
-              </select>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="dayOfWeek">Day of Week</Label>
+            <Select
+              value={formData.dayOfWeek}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, dayOfWeek: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a day" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Monday">Monday</SelectItem>
+                <SelectItem value="Tuesday">Tuesday</SelectItem>
+                <SelectItem value="Wednesday">Wednesday</SelectItem>
+                <SelectItem value="Thursday">Thursday</SelectItem>
+                <SelectItem value="Friday">Friday</SelectItem>
+                <SelectItem value="Saturday">Saturday</SelectItem>
+                <SelectItem value="Sunday">Sunday</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
+            <Label htmlFor="startTime">Start Time</Label>
             <Input
-              id="location"
-              value={formData.location}
-              onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+              id="startTime"
+              type="time"
+              value={formData.startTime}
+              onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
-            <select
-              id="category"
-              className="w-full p-2 border rounded-md"
-              value={formData.category}
-              onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-              required
-            >
-              <option value="">Select a category</option>
-              {categories.map(category => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
+            <Label>Location</Label>
+            <LocationSearch
+              onLocationSelect={handleLocationSelect}
+              initialLocation={
+                formData.location
+                  ? {
+                      address: formData.location,
+                      latitude: formData.latitude,
+                      longitude: formData.longitude,
+                    }
+                  : undefined
+              }
+            />
           </div>
 
-          <Button type="submit" disabled={loading} className="w-full">
+          <Button type="submit" disabled={loading}>
             {loading ? 'Creating...' : 'Create Event'}
           </Button>
         </form>
-      </div>
+      </Card>
+
+      <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-center">Event Created Successfully! 🎉</DialogTitle>
+          </DialogHeader>
+          <div className="py-6 flex flex-col items-center space-y-4">
+            <CheckCircle2 className="w-20 h-20 text-green-500" />
+            <p className="text-center">
+              Your event has been created and is now visible to volunteers.
+            </p>
+          </div>
+          <div className="flex justify-center space-x-4">
+            <Button onClick={() => router.push('/org/dashboard')}>
+              Go to Dashboard
+            </Button>
+            <Button variant="outline" onClick={() => {
+              setShowSuccess(false)
+              setFormData({
+                title: '',
+                organization: '',
+                description: '',
+                maxParticipants: '',
+                dayOfWeek: '',
+                startTime: '',
+                location: '',
+                latitude: 40.7128,
+                longitude: -74.0060,
+                category: ''
+              })
+            }}>
+              Create Another Event
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 
