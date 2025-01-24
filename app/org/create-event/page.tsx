@@ -51,27 +51,56 @@ export default function CreateEventPage() {
 
     setLoading(true)
     try {
+      // Convert day and time to a Date object
+      const now = new Date()
+      const dayIndex = daysOfWeek.indexOf(formData.dayOfWeek)
+      const [hourStr, ampm] = formData.startTime.split(' ')
+      let hour = parseInt(hourStr.split(':')[0])
+      if (ampm === 'PM' && hour !== 12) hour += 12
+      if (ampm === 'AM' && hour === 12) hour = 0
+
+      // Find the next occurrence of the selected day
+      const date = new Date(now)
+      date.setHours(hour, 0, 0, 0)
+      while (date.getDay() !== dayIndex) {
+        date.setDate(date.getDate() + 1)
+      }
+
+      const eventData = {
+        title: formData.title,
+        description: formData.description,
+        max_participants: parseInt(formData.maxParticipants),
+        date: date.toISOString(),
+        location: formData.location,
+        category: formData.category,
+        organizer_id: user.id
+      }
+
       const { data, error } = await supabase
         .from('events')
-        .insert([{
-          title: formData.title,
-          organization: formData.organization,
-          description: formData.description,
-          max_participants: parseInt(formData.maxParticipants),
-          day: formData.dayOfWeek,
-          time: formData.startTime,
-          location: formData.zipCode,
-          latitude: formData.latitude,
-          longitude: formData.longitude,
-          category: formData.category,
-          organizer_id: user.id
-        }])
+        .insert([eventData])
         .select()
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error:', error)
+        throw new Error(error.message)
+      }
 
-      sessionStorage.setItem('eventCreated', 'true')
-      router.push('/org/create-event/success')
+      toast({
+        title: "Success",
+        description: "Event created successfully",
+      })
+
+      // Reset form
+      setFormData({
+        title: '',
+        description: '',
+        maxParticipants: '',
+        dayOfWeek: '',
+        startTime: '',
+        location: '',
+        category: ''
+      })
     } catch (error) {
       console.error('Error creating event:', error)
       toast({

@@ -48,21 +48,31 @@ export default function OrgDashboardPage() {
     try {
       const { data: events, error } = await supabase
         .from('events_with_counts')
-        .select('*')
+        .select(`
+          id,
+          title,
+          date,
+          location,
+          max_participants,
+          participant_count,
+          registrations (
+            status,
+            user:users (
+              email,
+              name
+            )
+          )
+        `)
         .eq('organizer_id', user.id)
         .order('date', { ascending: true })
 
-      if (error) {
-        console.error('Supabase error:', error)
-        throw error
-      }
-
+      if (error) throw error
       setEvents(events || [])
     } catch (error) {
       console.error('Error fetching events:', error)
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to load events",
+        description: "Failed to load events",
         variant: "destructive"
       })
     } finally {
