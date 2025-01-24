@@ -1,13 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { supabase } from '@/lib/supabase'
 import Header from '../../components/Header'
 import { Card } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/components/ui/use-toast'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -19,10 +21,12 @@ export default function CreateEventPage() {
   const { user } = useAuth()
   const { toast } = useToast()
   const router = useRouter()
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
+    organization: '',
     organization: '',
     description: '',
     maxParticipants: '',
@@ -156,17 +160,17 @@ export default function CreateEventPage() {
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="maxParticipants">Maximum Participants</Label>
-            <Input
-              id="maxParticipants"
-              type="number"
-              min="1"
-              value={formData.maxParticipants}
-              onChange={(e) => setFormData(prev => ({ ...prev, maxParticipants: e.target.value }))}
-              required
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="maxParticipants">Maximum Participants</Label>
+              <Input
+                id="maxParticipants"
+                type="number"
+                min="1"
+                value={formData.maxParticipants}
+                onChange={(e) => setFormData(prev => ({ ...prev, maxParticipants: e.target.value }))}
+                required
+              />
+            </div>
 
           <div className="space-y-2">
             <Label htmlFor="dayOfWeek">Day of Week</Label>
