@@ -46,9 +46,10 @@ export default function OrgDashboardPage() {
     if (!user) return
 
     try {
+      // First get events with counts
       const { data: events, error } = await supabase
         .from('events_with_counts')
-        .select('*')
+        .select('*, registrations:registrations(user:profiles(email, name), status)')
         .eq('organizer_id', user.id)
         .order('date', { ascending: true })
 
@@ -57,7 +58,13 @@ export default function OrgDashboardPage() {
         throw error
       }
 
-      setEvents(events || [])
+      // Transform events to ensure registrations is always an array
+      const transformedEvents = (events || []).map(event => ({
+        ...event,
+        registrations: event.registrations || []
+      }))
+
+      setEvents(transformedEvents)
     } catch (error) {
       console.error('Error fetching events:', error)
       toast({
@@ -185,16 +192,16 @@ export default function OrgDashboardPage() {
                     <DialogHeader>
                       <DialogTitle>Registered Participants</DialogTitle>
                       <DialogDescription>
-                        {event.title} - {event.registrations.filter(r => r.status === 'active').length} participants
+                        {event.title} - {(event.registrations || []).filter(r => r.status === 'active').length} participants
                       </DialogDescription>
                     </DialogHeader>
                     <div className="max-h-[400px] overflow-y-auto">
-                      {event.registrations
+                      {(event.registrations || [])
                         .filter(r => r.status === 'active')
                         .map((registration, index) => (
                           <div key={index} className="py-2 border-b last:border-0">
-                            <p className="font-medium">{registration.user.name}</p>
-                            <p className="text-sm text-gray-600">{registration.user.email}</p>
+                            <p className="font-medium">{registration.user?.name || 'Anonymous'}</p>
+                            <p className="text-sm text-gray-600">{registration.user?.email || 'No email provided'}</p>
                           </div>
                         ))}
                     </div>

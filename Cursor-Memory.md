@@ -121,6 +121,68 @@
 - Simplified location input to use ZIP codes
 - Fixed import path issues in Netlify builds
 
+## Recent Changes and Learnings
+
+### Event Registration and Data Handling
+
+#### Problems Encountered
+1. Registration data access error
+   - Error: `TypeError: e.registrations is undefined`
+   - Root cause: Attempting to access registrations without proper table joins and null checks
+   - Impact: Broke the org dashboard view after event registration
+
+2. Event creation schema mismatch
+   - Previous schema used day_of_week but database expects proper date field
+   - Missing fields in event creation form compared to database schema
+
+#### Solutions Implemented
+1. Fixed registration data handling:
+   - Updated Supabase query to properly join registrations table:
+   ```typescript
+   .select('*, registrations:registrations(user:profiles(email, name), status)')
+   ```
+   - Added null checks and default empty arrays for registrations
+   - Improved error handling for missing user data
+
+2. Updated event creation form:
+   - Replaced day_of_week with proper date field
+   - Added missing fields: commitment, duration, recurring, image
+   - Improved date/time handling with proper timezone consideration
+   - Added validation for required fields
+
+#### Key Learnings
+1. Data Relationships:
+   - Always verify table relationships before accessing nested data
+   - Use proper joins in Supabase queries to get related data
+   - Implement null checks for optional relationships
+
+2. Schema Evolution:
+   - Keep form fields in sync with database schema
+   - Use TypeScript interfaces to enforce schema compliance
+   - Document schema changes and their impact
+
+3. Best Practices:
+   - Always transform data before setting state to ensure consistent structure
+   - Use defensive programming with null checks and default values
+   - Implement proper error boundaries and user feedback
+   - Consider timezone handling in date/time fields
+
+#### Future Considerations
+1. Data Integrity:
+   - Consider implementing database constraints for required fields
+   - Add validation rules at the database level
+   - Implement proper cascading deletes for related data
+
+2. Performance:
+   - Monitor query performance with joined tables
+   - Consider pagination for large datasets
+   - Implement caching for frequently accessed data
+
+3. User Experience:
+   - Add loading states for data fetching
+   - Improve error messages and recovery flows
+   - Consider optimistic updates for better responsiveness
+
 ## Recent Issues and Resolutions
 
 ### Import Path Resolution (2024-03-xx)
