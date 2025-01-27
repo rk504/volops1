@@ -1,6 +1,9 @@
+'use client'
+
 import { useAuth } from '@/lib/auth/AuthContext'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import Header from '@/components/Header'
 
 export default function OrgPage() {
   const { user } = useAuth()
@@ -22,5 +25,26 @@ export default function OrgPage() {
     )
   }
 
-  // ... rest of the existing code ...
+  return (
+    <div>
+      <Header />
+      <div className="container mx-auto py-8">
+        <h1 className="text-3xl font-bold mb-8">Organization Portal</h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Link href="/org/create-event">
+            <div className="border rounded-lg p-6 hover:border-primary cursor-pointer transition-colors">
+              <h2 className="text-xl font-semibold mb-2">Create Event</h2>
+              <p className="text-gray-600">Create a new volunteer opportunity for your organization</p>
+            </div>
+          </Link>
+          <Link href="/org/dashboard">
+            <div className="border rounded-lg p-6 hover:border-primary cursor-pointer transition-colors">
+              <h2 className="text-xl font-semibold mb-2">Dashboard</h2>
+              <p className="text-gray-600">View and manage your organization's events</p>
+            </div>
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
 } 
