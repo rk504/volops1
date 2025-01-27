@@ -430,4 +430,45 @@
    - Consider using a path alias configuration that works in all environments
    - Document import conventions for the team
    - Add path resolution tests to CI/CD pipeline
-   - Consider using TypeScript path mappings with proper build configuration 
+   - Consider using TypeScript path mappings with proper build configuration
+
+### Dynamic Route Configuration Issues
+
+#### Problems Encountered
+1. Build failure with TypeError
+   - Error: Function `(0 , l.aC)` not recognized
+   - Root cause: Routes attempting static generation with dynamic content
+   - Impact: Failed builds in production environment
+
+#### Solutions Implemented
+1. Added dynamic route configurations:
+   ```typescript
+   export const dynamic = 'force-dynamic'
+   ```
+   - Applied to `/api/verify-email` and `/api/opportunities` routes
+   - Prevents Next.js from attempting static generation
+   - Ensures proper handling of dynamic server functions
+
+#### Key Learnings
+1. Next.js Route Handling:
+   - API routes with dynamic content need explicit configuration
+   - Use `force-dynamic` for routes that can't be static
+   - Consider performance implications of dynamic routes
+
+2. Build Process:
+   - Verify route configurations before deployment
+   - Test builds locally to catch static generation issues
+   - Document dynamic route requirements
+
+#### Future Considerations
+1. Performance:
+   - Monitor impact of dynamic routes on performance
+   - Consider implementing caching strategies
+   - Evaluate which routes can be static
+
+2. Development Process:
+   - Add build configuration checks to CI/CD
+   - Document route requirements in code
+   - Consider implementing route type checking
+
+// ... existing content ... 
