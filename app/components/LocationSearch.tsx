@@ -1,24 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Search } from 'lucide-react'
-import dynamic from 'next/dynamic'
-import type { ChangeEvent } from 'react'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-
-interface DynamicMapProps {
-  center: [number, number]
-  marker: [number, number]
-}
+import DynamicMap from './DynamicMap'
 
 interface LocationSearchProps {
-  onLocationSelect: (location: {
-    zipCode: string
-    latitude: number
-    longitude: number
-  }) => void
+  onLocationSelect: (location: { zipCode: string; latitude: number; longitude: number }) => void
   initialLocation?: {
     zipCode: string
     latitude: number
@@ -26,96 +13,92 @@ interface LocationSearchProps {
   }
 }
 
-// Dynamically import the map component with no SSR
-const DynamicMap = dynamic<DynamicMapProps>(() => import('./DynamicMap'), {
-  ssr: false,
-  loading: () => (
-    <div className="h-[300px] bg-gray-100 rounded-lg flex items-center justify-center">
-      <p>Loading map...</p>
-    </div>
-  ),
-})
-
 export default function LocationSearch({ onLocationSelect, initialLocation }: LocationSearchProps) {
   const [zipCode, setZipCode] = useState(initialLocation?.zipCode || '')
+  const [coordinates, setCoordinates] = useState<[number, number] | null>(
+    initialLocation ? [initialLocation.latitude, initialLocation.longitude] : null
+  )
   const [error, setError] = useState('')
-  const [selectedLocation, setSelectedLocation] = useState(initialLocation || {
-    zipCode: '',
-    latitude: 40.7128,
-    longitude: -74.0060
-  })
 
-  const handleZipCodeSearch = async () => {
-    if (!zipCode.match(/^\d{5}$/)) {
-      setError('Please enter a valid 5-digit ZIP code')
-      return
-    }
+  const defaultCenter: [number, number] = [40.7128, -74.0060] // Default to NYC
 
-    try {
-      const response = await fetch(
-        `https://api.zippopotam.us/us/${zipCode}`
-      )
-      
-      if (!response.ok) {
-        throw new Error('Invalid ZIP code')
+  const handleZipCodeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newZipCode = e.target.value
+    setZipCode(newZipCode)
+    setError('')
+
+    if (newZipCode.length === 5) {
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?postalcode=${newZipCode}&country=USA&format=json`
+        )
+        const data = await response.json()
+
+        if (data && data[0]) {
+          const lat = parseFloat(data[0].lat)
+          const lon = parseFloat(data[0].lon)
+          setCoordinates([lat, lon])
+          onLocationSelect({
+            zipCode: newZipCode,
+            latitude: lat,
+            longitude: lon
+          })
+        } else {
+          setError('Invalid ZIP code')
+          setCoordinates(null)
+        }
+      } catch (error) {
+        console.error('Error fetching coordinates:', error)
+        setError('Error fetching location data')
+        setCoordinates(null)
       }
-
-      const data = await response.json()
-      const location = {
-        zipCode,
-        latitude: parseFloat(data.places[0].latitude),
-        longitude: parseFloat(data.places[0].longitude)
-      }
-      
-      setSelectedLocation(location)
-      setError('')
-      onLocationSelect(location)
-    } catch (error) {
-      console.error('Error searching ZIP code:', error)
-      setError('Invalid ZIP code. Please try again.')
+    } else {
+      setCoordinates(null)
     }
+  }
+
+  const handleMapClick = (lat: number, lng: number) => {
+    setCoordinates([lat, lng])
+    // When map is clicked, we'll reverse geocode to get the ZIP code
+    fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`
+    )
+      .then(response => response.json())
+      .then(data => {
+        if (data.address && data.address.postcode) {
+          const newZipCode = data.address.postcode
+          setZipCode(newZipCode)
+          onLocationSelect({
+            zipCode: newZipCode,
+            latitude: lat,
+            longitude: lng
+          })
+        }
+      })
+      .catch(error => {
+        console.error('Error reverse geocoding:', error)
+        setError('Error getting ZIP code for location')
+      })
   }
 
   return (
     <div className="space-y-4">
-      <div className="relative">
-        <div className="flex gap-2">
-          <Input
-            type="text"
-            placeholder="Enter ZIP code..."
-            value={zipCode}
-            maxLength={5}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              const value = e.target.value.replace(/\D/g, '').slice(0, 5)
-              setZipCode(value)
-              setError('')
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleZipCodeSearch()
-              }
-            }}
-          />
-          <Button 
-            onClick={handleZipCodeSearch}
-            disabled={zipCode.length !== 5}
-          >
-            <Search className="h-4 w-4 mr-2" />
-            Find
-          </Button>
-        </div>
-
-        {error && (
-          <Alert variant="destructive" className="mt-2">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+      <div>
+        <Input
+          type="text"
+          placeholder="Enter ZIP code"
+          value={zipCode}
+          onChange={handleZipCodeChange}
+          maxLength={5}
+          pattern="[0-9]*"
+        />
+        {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
       </div>
-
-      <div className="h-[300px] rounded-lg overflow-hidden border">
+      <div className="h-[300px] w-full">
         <DynamicMap
-          center={[selectedLocation.latitude, selectedLocation.longitude]}
-          marker={[selectedLocation.latitude, selectedLocation.longitude]}
+          center={coordinates || defaultCenter}
+          marker={coordinates || defaultCenter}
+          onMapClick={handleMapClick}
         />
       </div>
     </div>

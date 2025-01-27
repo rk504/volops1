@@ -29,7 +29,7 @@ export default function CreateEventPage() {
     dayOfWeek: '',
     startTime: '',
     zipCode: '',
-    latitude: 40.7128,
+    latitude: 40.7128, // Default to NYC
     longitude: -74.0060,
     category: ''
   })
@@ -45,8 +45,35 @@ export default function CreateEventPage() {
       return
     }
 
+    // Validate coordinates
+    if (!formData.latitude || !formData.longitude || !formData.zipCode) {
+      toast({
+        title: "Location required",
+        description: "Please select a valid location using the map.",
+        variant: "destructive"
+      })
+      return
+    }
+
     setLoading(true)
     try {
+      // Log the data being sent
+      console.log('Creating event with data:', {
+        title: formData.title,
+        organization: formData.organization,
+        description: formData.description,
+        max_participants: parseInt(formData.maxParticipants),
+        day: formData.dayOfWeek,
+        time: formData.startTime,
+        location: formData.zipCode,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        category: formData.category,
+        organizer_id: user.id,
+        status: 'active',
+        date: new Date().toISOString()
+      })
+
       const { data, error } = await supabase
         .from('events')
         .insert([{
@@ -60,19 +87,25 @@ export default function CreateEventPage() {
           latitude: formData.latitude,
           longitude: formData.longitude,
           category: formData.category,
-          organizer_id: user.id
+          organizer_id: user.id,
+          status: 'active',
+          date: new Date().toISOString()
         }])
         .select()
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error:', error)
+        throw new Error(error.message)
+      }
 
+      console.log('Event created successfully:', data)
       sessionStorage.setItem('eventCreated', 'true')
       router.push('/org/create-event/success')
     } catch (error) {
       console.error('Error creating event:', error)
       toast({
         title: "Error",
-        description: "Failed to create event. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create event. Please try again.",
         variant: "destructive"
       })
     } finally {
@@ -81,6 +114,7 @@ export default function CreateEventPage() {
   }
 
   const handleLocationSelect = (location: { zipCode: string; latitude: number; longitude: number }) => {
+    console.log('Location selected:', location)
     setFormData(prev => ({
       ...prev,
       zipCode: location.zipCode,
@@ -147,11 +181,11 @@ export default function CreateEventPage() {
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="education">Education</SelectItem>
-                <SelectItem value="environment">Environment</SelectItem>
-                <SelectItem value="health">Health</SelectItem>
-                <SelectItem value="community">Community</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                <SelectItem value="Education">Education</SelectItem>
+                <SelectItem value="Environment">Environment</SelectItem>
+                <SelectItem value="Health">Health</SelectItem>
+                <SelectItem value="Community Service">Community Service</SelectItem>
+                <SelectItem value="Animal Welfare">Animal Welfare</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -216,7 +250,7 @@ export default function CreateEventPage() {
             />
           </div>
 
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading || !formData.zipCode}>
             {loading ? 'Creating...' : 'Create Event'}
           </Button>
         </form>

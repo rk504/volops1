@@ -1,70 +1,78 @@
 'use client'
 
-import { MapContainer, TileLayer, Marker } from 'react-leaflet'
+import { useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import 'leaflet/dist/leaflet.css'
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 
-// Fix for default marker icon in Leaflet
-const icon = L.divIcon({
-  className: 'custom-icon',
-  html: `<div class="marker-pin"></div>`,
-  iconSize: [30, 30],
-  iconAnchor: [15, 30],
-  popupAnchor: [0, -30]
+// Fix Leaflet marker icon issue
+const icon = L.icon({
+  iconUrl: '/marker-icon.png',
+  iconRetinaUrl: '/marker-icon-2x.png',
+  shadowUrl: '/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  tooltipAnchor: [16, -28],
+  shadowSize: [41, 41]
 })
 
 interface DynamicMapProps {
   center: [number, number]
   marker: [number, number]
+  onMapClick?: (lat: number, lng: number) => void
 }
 
-export default function DynamicMap({ center, marker }: DynamicMapProps) {
+function MapEvents({ onClick }: { onClick?: (lat: number, lng: number) => void }) {
+  const map = useMapEvents({
+    click: (e) => {
+      if (onClick) {
+        onClick(e.latlng.lat, e.latlng.lng)
+      }
+    }
+  })
+  return null
+}
+
+function MapComponent({ center, marker, onMapClick }: DynamicMapProps) {
+  const map = useMap()
+
+  useEffect(() => {
+    map.setView(center, map.getZoom())
+  }, [center, map])
+
   return (
     <>
-      <style jsx global>{`
-        .custom-icon {
-          background-color: #3b82f6;
-          border-radius: 50%;
-          width: 30px !important;
-          height: 30px !important;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          color: white;
-          font-weight: bold;
-        }
-        .marker-pin {
-          width: 30px;
-          height: 30px;
-          border-radius: 50% 50% 50% 0;
-          background: #3b82f6;
-          position: absolute;
-          transform: rotate(-45deg);
-          left: 50%;
-          top: 50%;
-          margin: -15px 0 0 -15px;
-        }
-        .marker-pin::after {
-          content: '';
-          width: 24px;
-          height: 24px;
-          margin: 3px 0 0 3px;
-          background: #fff;
-          position: absolute;
-          border-radius: 50%;
-        }
-      `}</style>
-      <MapContainer
-        center={center}
-        zoom={13}
-        style={{ height: '100%', width: '100%' }}
-      >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        />
-        <Marker position={marker} icon={icon} />
-      </MapContainer>
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      <Marker position={marker} icon={icon} />
+      <MapEvents onClick={onMapClick} />
     </>
   )
-} 
+}
+
+function Map({ center, marker, onMapClick }: DynamicMapProps) {
+  return (
+    <MapContainer
+      center={center}
+      zoom={13}
+      style={{ height: '100%', width: '100%' }}
+      scrollWheelZoom={false}
+    >
+      <MapComponent center={center} marker={marker} onMapClick={onMapClick} />
+    </MapContainer>
+  )
+}
+
+// Export as dynamic component with no SSR
+export default dynamic(() => Promise.resolve(Map), {
+  ssr: false,
+  loading: () => (
+    <div className="h-full w-full bg-gray-100 rounded-lg flex items-center justify-center">
+      <p>Loading map...</p>
+    </div>
+  )
+}) 
