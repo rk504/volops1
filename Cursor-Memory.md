@@ -250,6 +250,84 @@
    - Improve error messages for users
    - Consider adding error boundaries
 
+### Events View and Registration Data Structure
+
+#### Problems Encountered
+1. Events not showing in organization dashboard
+   - Root cause: Using wrong data source (base events table instead of events_with_registrations view)
+   - Impact: Missing registration data and incorrect data structure
+   - Additional complexity: Flattened view structure vs nested JSON
+
+2. Data structure mismatches
+   - Previous interface assumed nested registration data
+   - View provides flattened data with registration fields at root level
+   - Multiple rows per event (one per registration)
+
+#### Solutions Implemented
+1. Updated data source:
+   - Switched to `events_with_registrations` view:
+   ```typescript
+   .from('events_with_registrations')
+   .select('*')
+   .eq('organizer_id', user.id)
+   ```
+   - Added proper data transformation to handle flattened structure
+   - Implemented grouping logic to combine multiple registrations
+
+2. Improved data handling:
+   - Created separate interfaces for event and registration data
+   - Added proper null handling for optional fields
+   - Implemented grouping logic to reconstruct relationships:
+   ```typescript
+   const eventMap = new Map<string, EventWithRegistrations & { registrations: EventRegistration[] }>()
+   eventsData?.forEach((event: EventWithRegistrations) => {
+     if (!eventMap.has(event.id)) {
+       eventMap.set(event.id, { ...event, registrations: [] })
+     }
+     if (event.registration_id) {
+       eventMap.get(event.id)!.registrations.push({
+         registration_id: event.registration_id,
+         registration_status: event.registration_status,
+         user_id: event.user_id,
+         user_email: event.user_email,
+         user_name: event.user_name
+       })
+     }
+   })
+   ```
+
+#### Key Learnings
+1. View Structure:
+   - Database views can provide flattened data structures
+   - Need to transform flattened data back to nested structure for UI
+   - Consider data shape when designing interfaces
+
+2. Data Relationships:
+   - Views can duplicate event data for each registration
+   - Need to group data by event ID to reconstruct relationships
+   - Consider memory usage with large datasets
+
+3. Type Safety:
+   - Make all fields from view explicit in interface
+   - Handle null values appropriately
+   - Document data transformation logic
+
+#### Future Considerations
+1. Performance:
+   - Monitor memory usage with large datasets
+   - Consider pagination for events with many registrations
+   - Cache transformed data structure
+
+2. Data Consistency:
+   - Add validation for transformed data
+   - Consider adding error boundaries
+   - Add loading states during transformation
+
+3. Code Organization:
+   - Move data transformation logic to utility functions
+   - Add unit tests for transformation logic
+   - Document view structure and transformation process
+
 ## Recent Issues and Resolutions
 
 ### Import Path Resolution (2024-03-xx)

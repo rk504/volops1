@@ -17,6 +17,14 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from '@/components/ui/input'
 
+interface EventRegistration {
+  registration_id: string | null
+  registration_status: string | null
+  user_id: string | null
+  user_email: string | null
+  user_name: string | null
+}
+
 interface EventWithRegistrations {
   id: string
   title: string
@@ -34,16 +42,13 @@ interface EventWithRegistrations {
   image: string
   recurring: boolean
   status: string
-  organizer_id: string
+  organizer_id: string | null
   duration: number
-  participant_count: number
-  registrations: {
-    user: {
-      email: string | null
-      name: string | null
-    } | null
-    status: string
-  }[]
+  registration_id: string | null
+  registration_status: string | null
+  user_id: string | null
+  user_email: string | null
+  user_name: string | null
 }
 
 export default function OrgDashboardPage() {
@@ -61,16 +66,10 @@ export default function OrgDashboardPage() {
     try {
       console.log('Fetching events for organizer:', user.id)
       
-      // First get events with counts
-      const { data: events, error } = await supabase
-        .from('events')  // Query the base events table instead of the view
-        .select(`
-          *,
-          registrations:registrations(
-            user:profiles(email, name),
-            status
-          )
-        `)
+      // Get events from events_with_registrations view
+      const { data: eventsData, error } = await supabase
+        .from('events_with_registrations')
+        .select('*')
         .eq('organizer_id', user.id)
         .order('date', { ascending: true })
 
@@ -79,13 +78,37 @@ export default function OrgDashboardPage() {
         throw error
       }
 
-      console.log('Found events:', events)
+      console.log('Found events:', eventsData)
 
-      // Transform events to ensure registrations is always an array
-      const transformedEvents = (events || []).map(event => ({
+      // Group registrations by event
+      const eventMap = new Map<string, EventWithRegistrations & { registrations: EventRegistration[] }>()
+
+      eventsData?.forEach((event: EventWithRegistrations) => {
+        if (!eventMap.has(event.id)) {
+          // Create new event entry
+          eventMap.set(event.id, {
+            ...event,
+            registrations: []
+          })
+        }
+
+        // Add registration if it exists
+        if (event.registration_id) {
+          const currentEvent = eventMap.get(event.id)!
+          currentEvent.registrations.push({
+            registration_id: event.registration_id,
+            registration_status: event.registration_status,
+            user_id: event.user_id,
+            user_email: event.user_email,
+            user_name: event.user_name
+          })
+        }
+      })
+
+      // Convert map to array and add participant count
+      const transformedEvents = Array.from(eventMap.values()).map(event => ({
         ...event,
-        registrations: event.registrations || [],
-        participant_count: (event.registrations || []).filter(r => r.status === 'active').length
+        participant_count: event.registrations.filter(r => r.registration_status === 'active').length
       }))
 
       setEvents(transformedEvents)
@@ -216,16 +239,16 @@ export default function OrgDashboardPage() {
                     <DialogHeader>
                       <DialogTitle>Registered Participants</DialogTitle>
                       <DialogDescription>
-                        {event.title} - {(event.registrations || []).filter(r => r.status === 'active').length} participants
+                        {event.title} - {event.participant_count} participants
                       </DialogDescription>
                     </DialogHeader>
                     <div className="max-h-[400px] overflow-y-auto">
-                      {(event.registrations || [])
-                        .filter(r => r.status === 'active')
+                      {event.registrations
+                        .filter(r => r.registration_status === 'active')
                         .map((registration, index) => (
-                          <div key={index} className="py-2 border-b last:border-0">
-                            <p className="font-medium">{registration.user?.name || 'Anonymous'}</p>
-                            <p className="text-sm text-gray-600">{registration.user?.email || 'No email provided'}</p>
+                          <div key={registration.registration_id || index} className="py-2 border-b last:border-0">
+                            <p className="font-medium">{registration.user_name || 'Anonymous'}</p>
+                            <p className="text-sm text-gray-600">{registration.user_email || 'No email provided'}</p>
                           </div>
                         ))}
                     </div>
