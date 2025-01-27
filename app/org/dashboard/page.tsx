@@ -20,15 +20,28 @@ import { Input } from '@/components/ui/input'
 interface EventWithRegistrations {
   id: string
   title: string
-  date: string
+  description: string
   location: string
+  date: string
   max_participants: number
+  created_at: string
+  organization: string
+  category: string
+  commitment: string
+  distance: number | null
+  latitude: number
+  longitude: number
+  image: string
+  recurring: boolean
+  status: string
+  organizer_id: string
+  duration: number
   participant_count: number
   registrations: {
     user: {
-      email: string
-      name: string
-    }
+      email: string | null
+      name: string | null
+    } | null
     status: string
   }[]
 }
@@ -46,10 +59,18 @@ export default function OrgDashboardPage() {
     if (!user) return
 
     try {
+      console.log('Fetching events for organizer:', user.id)
+      
       // First get events with counts
       const { data: events, error } = await supabase
-        .from('events_with_counts')
-        .select('*, registrations:registrations(user:profiles(email, name), status)')
+        .from('events')  // Query the base events table instead of the view
+        .select(`
+          *,
+          registrations:registrations(
+            user:profiles(email, name),
+            status
+          )
+        `)
         .eq('organizer_id', user.id)
         .order('date', { ascending: true })
 
@@ -58,10 +79,13 @@ export default function OrgDashboardPage() {
         throw error
       }
 
+      console.log('Found events:', events)
+
       // Transform events to ensure registrations is always an array
       const transformedEvents = (events || []).map(event => ({
         ...event,
-        registrations: event.registrations || []
+        registrations: event.registrations || [],
+        participant_count: (event.registrations || []).filter(r => r.status === 'active').length
       }))
 
       setEvents(transformedEvents)

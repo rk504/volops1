@@ -183,6 +183,73 @@
    - Improve error messages and recovery flows
    - Consider optimistic updates for better responsiveness
 
+### Event Query and Data Structure Issues
+
+#### Problems Encountered
+1. Events not showing in organization dashboard
+   - Root cause: Querying `events_with_counts` view instead of base `events` table
+   - Impact: Organization's created events were not visible in their dashboard
+   - Additional complexity: View might not have included all necessary fields
+
+2. Data structure mismatches
+   - Interface didn't match actual database schema
+   - Missing fields in TypeScript interface
+   - Incorrect assumptions about nullable fields
+
+#### Solutions Implemented
+1. Fixed event querying:
+   - Switched from view to base table query:
+   ```typescript
+   .from('events')
+   .select(`
+     *,
+     registrations:registrations(
+       user:profiles(email, name),
+       status
+     )
+   `)
+   ```
+   - Added proper logging for debugging
+   - Calculate participant count in the transform function
+
+2. Updated data structures:
+   - Added all fields from database schema to interface
+   - Made nullable fields explicit in types
+   - Added proper handling for optional relationships
+   - Improved type safety throughout the component
+
+#### Key Learnings
+1. Database Structure:
+   - Views may not always include all necessary fields
+   - Base tables should be queried when full data access is needed
+   - Document view definitions and their purposes
+
+2. Type Safety:
+   - Keep interfaces in sync with database schema
+   - Make nullable fields explicit in TypeScript
+   - Add proper null checks in component logic
+
+3. Data Transformation:
+   - Transform data immediately after fetching
+   - Calculate derived fields consistently
+   - Document data transformation logic
+
+#### Future Considerations
+1. Database Views:
+   - Consider creating specific views for different use cases
+   - Document view purposes and limitations
+   - Add tests for view queries
+
+2. Type Generation:
+   - Consider using Supabase's type generation
+   - Keep type definitions in a central location
+   - Add validation for data transformations
+
+3. Error Handling:
+   - Add more detailed error logging
+   - Improve error messages for users
+   - Consider adding error boundaries
+
 ## Recent Issues and Resolutions
 
 ### Import Path Resolution (2024-03-xx)
