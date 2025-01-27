@@ -10,6 +10,13 @@ import type { LatLngExpression } from 'leaflet'
 let L: any
 if (typeof window !== 'undefined') {
   L = require('leaflet')
+  // Fix Leaflet default icon issue
+  delete L.Icon.Default.prototype._getIconUrl
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: '/images/marker-icon-2x.png',
+    iconUrl: '/images/marker-icon.png',
+    shadowUrl: '/images/marker-shadow.png',
+  })
 }
 
 interface DynamicMapProps {
@@ -59,9 +66,9 @@ function Map({ center, marker, onMapClick }: DynamicMapProps) {
     if (typeof window !== 'undefined' && L) {
       setIcon(
         L.icon({
-          iconUrl: '/marker-icon.png',
-          iconRetinaUrl: '/marker-icon-2x.png',
-          shadowUrl: '/marker-shadow.png',
+          iconUrl: '/images/marker-icon.png',
+          iconRetinaUrl: '/images/marker-icon-2x.png',
+          shadowUrl: '/images/marker-shadow.png',
           iconSize: [25, 41],
           iconAnchor: [12, 41],
           popupAnchor: [1, -34],
@@ -91,7 +98,7 @@ function Map({ center, marker, onMapClick }: DynamicMapProps) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      {icon && <MarkerComponent position={marker} icon={icon} />}
+      <MarkerComponent position={marker} icon={icon || L.Icon.Default.prototype} />
       <MapEvents onClick={onMapClick} />
     </MapContainer>
   )
