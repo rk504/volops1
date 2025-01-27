@@ -328,6 +328,84 @@
    - Add unit tests for transformation logic
    - Document view structure and transformation process
 
+### Event Editing Implementation
+
+#### Features Added
+1. Edit functionality for organization events
+   - Added edit button to event cards
+   - Created edit dialog with form
+   - Implemented update functionality with Supabase
+
+2. Form improvements
+   - Pre-populated form with existing event data
+   - Added location selection with map
+   - Proper date/time handling
+   - Input validation
+
+#### Implementation Details
+1. Data handling:
+   ```typescript
+   const handleEditClick = (event: EventWithRegistrations) => {
+     const eventDate = new Date(event.date)
+     const dateStr = eventDate.toISOString().split('T')[0]
+     const timeStr = eventDate.toTimeString().slice(0, 5)
+     
+     setEditFormData({
+       title: event.title,
+       // ... other fields
+       date: dateStr,
+       time: timeStr,
+     })
+   }
+   ```
+
+2. Update logic:
+   ```typescript
+   const handleUpdateEvent = async () => {
+     const dateTime = new Date(editFormData.date + 'T' + editFormData.time)
+     await supabase
+       .from('events')
+       .update({
+         // ... event fields
+         date: dateTime.toISOString(),
+       })
+       .eq('id', editingEvent.id)
+   }
+   ```
+
+#### Key Learnings
+1. Form State Management:
+   - Separate form data state from event data
+   - Handle date/time conversion properly
+   - Maintain proper types for form fields
+
+2. UI/UX Considerations:
+   - Show loading state during updates
+   - Provide clear feedback on success/error
+   - Maintain consistent form layout
+   - Handle form validation
+
+3. Data Flow:
+   - Update local state after successful edit
+   - Refresh event list to show changes
+   - Handle errors gracefully
+
+#### Future Improvements
+1. Validation:
+   - Add client-side validation
+   - Validate date ranges
+   - Check for conflicting events
+
+2. UX Enhancements:
+   - Add confirmation for major changes
+   - Show diff of changes
+   - Add undo functionality
+
+3. Performance:
+   - Optimize form re-renders
+   - Add optimistic updates
+   - Cache form state
+
 ## Recent Issues and Resolutions
 
 ### Import Path Resolution (2024-03-xx)
