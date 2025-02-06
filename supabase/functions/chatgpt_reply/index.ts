@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { Configuration, OpenAIApi } from 'https://esm.sh/openai@3.2.1'
 import { corsHeaders } from '../_shared/cors.ts'
 
 console.log("Hello from Chatbot Function!")
@@ -64,24 +65,75 @@ serve(async (req) => {
       )
     }
 
-    // Your OpenAI API call would go here
-    // For now, let's return a test response
-    const response = {
-      content: `Test response to: ${user_message}. This confirms the Edge Function is working.`
+    // Check for OpenAI API key
+    const apiKey = Deno.env.get('OPENAI_API_KEY')
+    if (!apiKey) {
+      console.error('OpenAI API key not found')
+      return new Response(
+        JSON.stringify({ error: 'OpenAI API key not configured' }),
+        { 
+          status: 500,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          }
+        }
+      )
     }
 
-    console.log('Sending response:', response)
+    // Initialize OpenAI
+    const configuration = new Configuration({ apiKey })
+    const openai = new OpenAIApi(configuration)
 
-    return new Response(
-      JSON.stringify(response),
-      { 
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+    try {
+      const completion = await openai.createChatCompletion({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: "You are a helpful assistant that helps users find volunteer opportunities. You should focus on understanding their interests and suggesting relevant volunteer categories and activities. Keep responses concise and friendly."
+          },
+          {
+            role: "user",
+            content: user_message
+          }
+        ],
+        max_tokens: 150,
+        temperature: 0.7,
+      })
+
+      const response = {
+        content: completion.data.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response."
       }
-    )
+
+      console.log('Sending response:', response)
+
+      return new Response(
+        JSON.stringify(response),
+        { 
+          status: 200,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          }
+        }
+      )
+    } catch (error) {
+      console.error('OpenAI API error:', error)
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to generate response',
+          details: error.message
+        }),
+        { 
+          status: 500,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          }
+        }
+      )
+    }
   } catch (error) {
     // Log the full error
     console.error('Unexpected error:', {

@@ -352,4 +352,70 @@
    - Consider using a path alias configuration that works in all environments
    - Document import conventions for the team
    - Add path resolution tests to CI/CD pipeline
-   - Consider using TypeScript path mappings with proper build configuration 
+   - Consider using TypeScript path mappings with proper build configuration
+
+## Chatbot Integration Issues and Solutions
+
+### CORS and Edge Function Connectivity Issues
+- **Problem**: Edge Function returned non-2xx status codes and CORS preflight failures
+- **Root Cause**: 
+  - CORS headers not properly configured
+  - Edge Function deployment issues
+  - Request/response handling not properly structured
+
+### Solutions Implemented
+1. **Edge Function Structure**
+   - Added proper CORS headers handling
+   - Implemented detailed request validation
+   - Added comprehensive error handling and logging
+   - Structured response format for consistency
+
+2. **Client-Side Improvements**
+   - Enhanced error handling with detailed logging
+   - Better user feedback for different error scenarios
+   - Improved message state management
+   - Added loading states and animations
+
+3. **Debugging Infrastructure**
+   - Added detailed console logging on both client and server
+   - Implemented request/response validation
+   - Added error context preservation
+   - Created user-friendly error messages
+
+### Key Learnings
+1. **Edge Function Development**
+   - Edge Functions require explicit CORS configuration
+   - Need proper error handling at both parsing and execution stages
+   - Important to validate request methods and body structure
+   - Console logging is crucial for debugging
+
+2. **Error Handling Best Practices**
+   - Always preserve error context through the stack
+   - Provide user-friendly error messages
+   - Log detailed error information for debugging
+   - Handle different response formats gracefully
+
+3. **Client-Side Integration**
+   - Need to handle various response formats
+   - Important to show loading states
+   - Should provide clear feedback for all error cases
+   - Must handle network and parsing errors separately
+
+### Future Considerations
+1. **Reliability Improvements**
+   - Implement retry logic for failed requests
+   - Add request timeout handling
+   - Consider implementing fallback responses
+   - Add telemetry for monitoring
+
+2. **User Experience**
+   - Add message persistence
+   - Implement typing indicators
+   - Add support for markdown in responses
+   - Consider adding message history
+
+3. **Development Process**
+   - Set up automated testing for Edge Functions
+   - Implement staging environment for testing
+   - Add monitoring for Edge Function performance
+   - Create deployment verification steps 
