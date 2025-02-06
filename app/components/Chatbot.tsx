@@ -58,29 +58,30 @@ export default function Chatbot() {
       })
 
       // Log the complete response for debugging
-      console.log('Raw Supabase Edge Function response:', {
-        data: JSON.stringify(data, null, 2),
+      console.log('Supabase Edge Function response:', {
+        data: data ? JSON.stringify(data, null, 2) : null,
         error: error ? {
           message: error.message,
           name: error.name,
-          stack: error.stack,
-          details: error
+          details: error.details,
+          context: error
         } : null
       })
 
       if (error) {
-        console.error('Edge function error details:', {
+        // Extract error details from the Edge Function response
+        const errorDetails = error.message || error.details || 'Unknown error'
+        console.error('Edge function error:', {
           message: error.message,
-          name: error.name,
-          stack: error.stack,
-          details: error
+          details: error.details,
+          context: error
         })
-        throw error
+        throw new Error(errorDetails)
       }
 
       if (!data) {
         console.error('No data received from edge function')
-        throw new Error('No response from chatbot')
+        throw new Error('No response received from the chatbot')
       }
 
       // Log the parsed data
@@ -89,17 +90,14 @@ export default function Chatbot() {
       // Try to handle different possible response formats
       let botMessage: string
       if (typeof data === 'string') {
-        // If the response is a direct string
         botMessage = data
       } else if (data.content) {
-        // If the response has a content field
         botMessage = data.content
       } else if (data.choices?.[0]?.message?.content) {
-        // If we're getting the raw OpenAI response
         botMessage = data.choices[0].message.content
       } else {
         console.error('Unexpected response format:', data)
-        throw new Error('Invalid response format from chatbot')
+        throw new Error('Received invalid response format from chatbot')
       }
 
       const botResponse: Message = {
@@ -115,23 +113,26 @@ export default function Chatbot() {
         name: error.name,
         message: error.message,
         stack: error.stack,
-        supabaseError: error.error,
-        statusCode: error.statusCode,
-        details: error
+        context: error
       })
+
+      // Create a user-friendly error message
+      const errorMessage = error.message && !error.message.includes('Failed to send')
+        ? error.message
+        : 'Unable to connect to the chatbot'
 
       toast({
         title: "Chatbot Error",
-        description: `Error: ${error.message || 'Unable to connect to the chatbot'}`,
+        description: errorMessage,
         variant: "destructive"
       })
 
-      const errorMessage: Message = {
-        text: `I apologize, but I'm having trouble connecting to my brain at the moment. Error: ${error.message || 'Connection failed'}`,
+      const botErrorMessage: Message = {
+        text: `I apologize, but I'm having trouble processing your request. ${errorMessage}`,
         sender: "bot",
         timestamp: new Date()
       }
-      setMessages(prev => [...prev, errorMessage])
+      setMessages(prev => [...prev, botErrorMessage])
     } finally {
       setLoading(false)
     }
