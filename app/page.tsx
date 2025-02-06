@@ -11,6 +11,7 @@ import { fetchOpportunities, Opportunity } from '../lib/data'
 import { supabase } from '@/lib/supabase'
 import Image from 'next/image'
 import Link from 'next/link'
+import Chatbot from './components/Chatbot'
 
 // Dynamically import the Map component with no SSR
 const Map = dynamic(() => import('./components/Map'), { 
@@ -143,6 +144,10 @@ export default function Home() {
             </div>
           </main>
         </div>
+      </div>
+      {/* Add Chatbot in fixed position */}
+      <div className="fixed bottom-4 right-4 z-50">
+        <Chatbot />
       </div>
     </div>
   )
