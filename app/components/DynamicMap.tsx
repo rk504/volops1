@@ -1,115 +1,70 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import dynamic from 'next/dynamic'
+import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import type { MapContainer as MapContainerType, TileLayer, Marker } from 'react-leaflet'
-import type { LatLngExpression } from 'leaflet'
+import L from 'leaflet'
 
-// Only import Leaflet on the client side
-let L: any
-if (typeof window !== 'undefined') {
-  L = require('leaflet')
-  // Fix Leaflet default icon issue
-  delete L.Icon.Default.prototype._getIconUrl
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl: '/images/marker-icon-2x.png',
-    iconUrl: '/images/marker-icon.png',
-    shadowUrl: '/images/marker-shadow.png',
+// Fix for default marker icon in Leaflet
+const icon = L.divIcon({
+  className: 'custom-icon',
+  html: `<div class="marker-pin"></div>`,
+  iconSize: [30, 30],
+  iconAnchor: [15, 30],
+  popupAnchor: [0, -30]
   })
-}
 
 interface DynamicMapProps {
   center: [number, number]
   marker: [number, number]
-  onMapClick?: (lat: number, lng: number) => void
 }
 
-// Dynamically import react-leaflet components
-const MapContainer = dynamic(
-  () => import('react-leaflet').then((mod) => mod.MapContainer),
-  { ssr: false }
-)
-
-const TileLayerComponent = dynamic(
-  () => import('react-leaflet').then((mod) => mod.TileLayer),
-  { ssr: false }
-)
-
-const MarkerComponent = dynamic(
-  () => import('react-leaflet').then((mod) => mod.Marker),
-  { ssr: false }
-)
-
-const MapEvents = dynamic(
-  () => import('react-leaflet').then((mod) => {
-    const { useMapEvents } = mod
-    return function MapEvents({ onClick }: { onClick?: (lat: number, lng: number) => void }) {
-      useMapEvents({
-        click: (e) => {
-          if (onClick) {
-            onClick(e.latlng.lat, e.latlng.lng)
-          }
-        }
-      })
-      return null
-    }
-  }),
-  { ssr: false }
-)
-
-function Map({ center, marker, onMapClick }: DynamicMapProps) {
-  const [icon, setIcon] = useState<any>(null)
-
-  useEffect(() => {
-    // Initialize the icon only on the client side
-    if (typeof window !== 'undefined' && L) {
-      setIcon(
-        L.icon({
-          iconUrl: '/images/marker-icon.png',
-          iconRetinaUrl: '/images/marker-icon-2x.png',
-          shadowUrl: '/images/marker-shadow.png',
-          iconSize: [25, 41],
-          iconAnchor: [12, 41],
-          popupAnchor: [1, -34],
-          tooltipAnchor: [16, -28],
-          shadowSize: [41, 41]
-        })
-      )
-    }
-  }, [])
-
-  if (typeof window === 'undefined') {
-    return (
-      <div className="h-full w-full bg-gray-100 rounded-lg flex items-center justify-center">
-        <p>Loading map...</p>
-      </div>
-    )
-  }
-
+export default function DynamicMap({ center, marker }: DynamicMapProps) {
   return (
+    <>
+      <style jsx global>{`
+        .custom-icon {
+          background-color: #3b82f6;
+          border-radius: 50%;
+          width: 30px !important;
+          height: 30px !important;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          color: white;
+          font-weight: bold;
+          }
+        .marker-pin {
+          width: 30px;
+          height: 30px;
+          border-radius: 50% 50% 50% 0;
+          background: #3b82f6;
+          position: absolute;
+          transform: rotate(-45deg);
+          left: 50%;
+          top: 50%;
+          margin: -15px 0 0 -15px;
+    }
+        .marker-pin::after {
+          content: '';
+          width: 24px;
+          height: 24px;
+          margin: 3px 0 0 3px;
+          background: #fff;
+          position: absolute;
+          border-radius: 50%;
+  }
+      `}</style>
     <MapContainer
       center={center}
       zoom={13}
       style={{ height: '100%', width: '100%' }}
-      scrollWheelZoom={false}
     >
-      <TileLayerComponent
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <MarkerComponent position={marker} icon={icon || L.Icon.Default.prototype} />
-      <MapEvents onClick={onMapClick} />
+        <Marker position={marker} icon={icon} />
     </MapContainer>
+    </>
   )
 }
-
-// Export the map component with no SSR
-export default dynamic(() => Promise.resolve(Map), {
-  ssr: false,
-  loading: () => (
-    <div className="h-full w-full bg-gray-100 rounded-lg flex items-center justify-center">
-      <p>Loading map...</p>
-    </div>
-  )
-}) 
