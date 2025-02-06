@@ -26,12 +26,17 @@ export default function CreateEventPage() {
     organization: '',
     description: '',
     maxParticipants: '',
-    dayOfWeek: '',
-    startTime: '',
+    date: '',
+    time: '',
+    location: '',
     zipCode: '',
-    latitude: 40.7128,
+    latitude: 40.7128, // Default to NYC
     longitude: -74.0060,
-    category: ''
+    category: '',
+    commitment: '',
+    duration: '120', // Default to 2 hours in minutes
+    recurring: true,
+    image: 'https://images.unsplash.com/photo-1593113630400-ea4288922497?q=80&w=800&h=800&fit=crop' // Default image
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,8 +50,41 @@ export default function CreateEventPage() {
       return
     }
 
+    // Validate coordinates
+    if (!formData.latitude || !formData.longitude || !formData.zipCode) {
+      toast({
+        title: "Location required",
+        description: "Please select a valid location using the map.",
+        variant: "destructive"
+      })
+      return
+    }
+
     setLoading(true)
     try {
+      // Combine date and time
+      const dateTime = new Date(formData.date + 'T' + formData.time)
+
+      // Log the data being sent
+      console.log('Creating event with data:', {
+        title: formData.title,
+        organization: formData.organization,
+        description: formData.description,
+        max_participants: parseInt(formData.maxParticipants),
+        date: dateTime.toISOString(),
+        location: formData.location || formData.zipCode,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        category: formData.category,
+        commitment: formData.commitment,
+        duration: parseInt(formData.duration),
+        recurring: formData.recurring,
+        image: formData.image,
+        organizer_id: user.id,
+        status: 'active',
+        created_at: new Date().toISOString()
+      })
+
       const { data, error } = await supabase
         .from('events')
         .insert([{
@@ -54,25 +92,33 @@ export default function CreateEventPage() {
           organization: formData.organization,
           description: formData.description,
           max_participants: parseInt(formData.maxParticipants),
-          day: formData.dayOfWeek,
-          time: formData.startTime,
-          location: formData.zipCode,
+          date: dateTime.toISOString(),
+          location: formData.location || formData.zipCode,
           latitude: formData.latitude,
           longitude: formData.longitude,
           category: formData.category,
-          organizer_id: user.id
+          commitment: formData.commitment,
+          duration: parseInt(formData.duration),
+          recurring: formData.recurring,
+          image: formData.image,
+          organizer_id: user.id,
+          status: 'active',
+          created_at: new Date().toISOString()
         }])
         .select()
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error:', error)
+        throw new Error(error.message)
+      }
 
-      sessionStorage.setItem('eventCreated', 'true')
-      router.push('/org/create-event/success')
+      console.log('Event created successfully:', data)
+      setShowSuccess(true)
     } catch (error) {
       console.error('Error creating event:', error)
       toast({
         title: "Error",
-        description: "Failed to create event. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create event. Please try again.",
         variant: "destructive"
       })
     } finally {
@@ -81,6 +127,7 @@ export default function CreateEventPage() {
   }
 
   const handleLocationSelect = (location: { zipCode: string; latitude: number; longitude: number }) => {
+    console.log('Location selected:', location)
     setFormData(prev => ({
       ...prev,
       zipCode: location.zipCode,
@@ -147,11 +194,11 @@ export default function CreateEventPage() {
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="education">Education</SelectItem>
-                <SelectItem value="environment">Environment</SelectItem>
-                <SelectItem value="health">Health</SelectItem>
-                <SelectItem value="community">Community</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                <SelectItem value="Education">Education</SelectItem>
+                <SelectItem value="Environment">Environment</SelectItem>
+                <SelectItem value="Health">Health</SelectItem>
+                <SelectItem value="Community Service">Community Service</SelectItem>
+                <SelectItem value="Animal Welfare">Animal Welfare</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -169,39 +216,71 @@ export default function CreateEventPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="dayOfWeek">Day of Week</Label>
-            <Select
-              value={formData.dayOfWeek}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, dayOfWeek: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a day" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Monday">Monday</SelectItem>
-                <SelectItem value="Tuesday">Tuesday</SelectItem>
-                <SelectItem value="Wednesday">Wednesday</SelectItem>
-                <SelectItem value="Thursday">Thursday</SelectItem>
-                <SelectItem value="Friday">Friday</SelectItem>
-                <SelectItem value="Saturday">Saturday</SelectItem>
-                <SelectItem value="Sunday">Sunday</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="startTime">Start Time</Label>
+            <Label htmlFor="date">Event Date</Label>
             <Input
-              id="startTime"
-              type="time"
-              value={formData.startTime}
-              onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
+              id="date"
+              type="date"
+              value={formData.date}
+              onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Location</Label>
+            <Label htmlFor="time">Start Time</Label>
+            <Input
+              id="time"
+              type="time"
+              value={formData.time}
+              onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="duration">Duration (minutes)</Label>
+            <Input
+              id="duration"
+              type="number"
+              min="30"
+              step="30"
+              value={formData.duration}
+              onChange={(e) => setFormData(prev => ({ ...prev, duration: e.target.value }))}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="commitment">Time Commitment</Label>
+            <Select
+              value={formData.commitment}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, commitment: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select time commitment" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="2 hours/week">2 hours/week</SelectItem>
+                <SelectItem value="3 hours/week">3 hours/week</SelectItem>
+                <SelectItem value="4 hours/week">4 hours/week</SelectItem>
+                <SelectItem value="Flexible">Flexible</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="location">Location Name</Label>
+            <Input
+              id="location"
+              value={formData.location}
+              onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+              placeholder="e.g., City Community Center"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Map Location</Label>
             <LocationSearch
               onLocationSelect={handleLocationSelect}
               initialLocation={
@@ -216,7 +295,7 @@ export default function CreateEventPage() {
             />
           </div>
 
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading || !formData.zipCode}>
             {loading ? 'Creating...' : 'Create Event'}
           </Button>
         </form>
@@ -244,12 +323,17 @@ export default function CreateEventPage() {
                 organization: '',
                 description: '',
                 maxParticipants: '',
-                dayOfWeek: '',
-                startTime: '',
+                date: '',
+                time: '',
+                location: '',
                 zipCode: '',
                 latitude: 40.7128,
                 longitude: -74.0060,
-                category: ''
+                category: '',
+                commitment: '',
+                duration: '120',
+                recurring: true,
+                image: 'https://images.unsplash.com/photo-1593113630400-ea4288922497?q=80&w=800&h=800&fit=crop'
               })
             }}>
               Create Another Event
