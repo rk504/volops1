@@ -49,10 +49,7 @@ export default function Chatbot() {
     try {
       // Call the Supabase Edge Function
       const { data, error } = await supabase.functions.invoke('chatgpt_reply', {
-        body: { user_message: input },
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        body: { user_message: input }
       })
 
       console.log('Supabase Edge Function response:', { data, error })
@@ -62,13 +59,13 @@ export default function Chatbot() {
         throw error
       }
 
-      if (!data || typeof data.choices?.[0]?.message?.content !== 'string') {
-        console.error('Unexpected response format:', data)
-        throw new Error('Invalid response format from chatbot')
+      if (!data) {
+        console.error('No data received from edge function')
+        throw new Error('No response from chatbot')
       }
 
-      // Extract the actual message content from the OpenAI response
-      const botMessage = data.choices[0].message.content
+      // The response should now be the message content directly
+      const botMessage = data.content || "I'm having trouble understanding. Could you rephrase that?"
 
       const botResponse: Message = {
         text: botMessage,
