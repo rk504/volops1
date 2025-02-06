@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { useAuth } from "@/lib/auth/AuthContext"
 import { supabase } from "@/lib/supabase"
+import { useToast } from "@/components/ui/use-toast"
 
 interface Message {
   text: string
@@ -22,6 +23,7 @@ export default function Chatbot() {
   const [loading, setLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { user } = useAuth()
+  const { toast } = useToast()
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -45,15 +47,31 @@ export default function Chatbot() {
     setLoading(true)
   
     try {
+      // Call the Supabase Edge Function
       const { data, error } = await supabase.functions.invoke('chatgpt_reply', {
-        body: { user_message: input }
+        body: { user_message: input },
+        headers: {
+          'Content-Type': 'application/json'
+        }
       })
 
-      if (error) throw error
+      console.log('Supabase Edge Function response:', { data, error })
 
-      // Parse the response from the edge function
+      if (error) {
+        console.error('Edge function error:', error)
+        throw error
+      }
+
+      if (!data || typeof data.choices?.[0]?.message?.content !== 'string') {
+        console.error('Unexpected response format:', data)
+        throw new Error('Invalid response format from chatbot')
+      }
+
+      // Extract the actual message content from the OpenAI response
+      const botMessage = data.choices[0].message.content
+
       const botResponse: Message = {
-        text: data?.response || "I'm having trouble understanding. Could you rephrase that?",
+        text: botMessage,
         sender: "bot",
         timestamp: new Date()
       }
@@ -61,8 +79,13 @@ export default function Chatbot() {
       setMessages(prev => [...prev, botResponse])
     } catch (error) {
       console.error('Chat error:', error)
+      toast({
+        title: "Error",
+        description: "Unable to connect to the chatbot. Please try again later.",
+        variant: "destructive"
+      })
       const errorMessage: Message = {
-        text: "Sorry, I'm having trouble connecting. Please try again later.",
+        text: "I apologize, but I'm having trouble connecting to my brain at the moment. Please try again in a few moments.",
         sender: "bot",
         timestamp: new Date()
       }
