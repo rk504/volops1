@@ -418,4 +418,60 @@
    - Set up automated testing for Edge Functions
    - Implement staging environment for testing
    - Add monitoring for Edge Function performance
-   - Create deployment verification steps 
+   - Create deployment verification steps
+
+### Latest Debugging Session (2024-03-xx)
+1. **Error Symptoms**:
+   - Edge Function returning HTTP 401 (Unauthorized)
+   - Error message: "Missing authorization header"
+   - Client not sending authorization token
+   - Request failing before reaching OpenAI API
+
+2. **Root Cause**:
+   - Edge Function requires authorization header
+   - Client not including session token in request
+   - Missing authentication flow handling
+
+3. **Solutions Implemented**:
+   a. Edge Function Updates:
+      - Added authorization header validation
+      - Explicit 401 error handling
+      - Better error messages for auth issues
+      - Request ID tracking in responses
+   
+   b. Client Updates:
+      - Added session token to requests
+      - Better handling of auth errors
+      - User-friendly auth error messages
+      - Session validation before requests
+
+4. **Key Improvements**:
+   - Proper authentication flow
+   - Better error messages
+   - Consistent error handling
+   - Request tracing with IDs
+
+5. **Next Steps**:
+   - Deploy updated Edge Function
+   - Test authentication flow
+   - Verify error messages
+   - Monitor auth-related errors
+
+### Future Considerations
+1. **Error Handling**:
+   - Add error rate monitoring
+   - Implement circuit breakers
+   - Add error reporting to external service
+   - Create error type catalog
+
+2. **Monitoring**:
+   - Add performance metrics
+   - Track error frequencies
+   - Monitor API key usage
+   - Log request/response times
+
+3. **Development Process**:
+   - Create error simulation tests
+   - Document all error types
+   - Add error handling guidelines
+   - Create debugging playbook 

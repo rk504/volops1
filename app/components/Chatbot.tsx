@@ -49,10 +49,17 @@ export default function Chatbot() {
     try {
       console.log('Sending message to Supabase function:', { user_message: input })
 
-      // Call the Supabase Edge Function
+      // Get the current session
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        throw new Error('No active session')
+      }
+
+      // Call the Supabase Edge Function with auth header
       const { data, error } = await supabase.functions.invoke('chatgpt_reply', {
         body: { user_message: input },
         headers: {
+          Authorization: `Bearer ${session.access_token}`,
           'Content-Type': 'application/json'
         }
       })
@@ -69,14 +76,11 @@ export default function Chatbot() {
       })
 
       if (error) {
-        // Extract error details from the Edge Function response
-        const errorDetails = error.message || error.details || 'Unknown error'
-        console.error('Edge function error:', {
-          message: error.message,
-          details: error.details,
-          context: error
-        })
-        throw new Error(errorDetails)
+        // Check for specific error types
+        if (error.message.includes('401') || error.message.includes('authorization')) {
+          throw new Error('Authentication error - please sign in')
+        }
+        throw error
       }
 
       if (!data) {
