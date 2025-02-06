@@ -474,4 +474,58 @@
    - Create error simulation tests
    - Document all error types
    - Add error handling guidelines
+   - Create debugging playbook
+
+### Latest Error (Edge Function)
+1. **Error Symptoms**:
+   - FunctionsFetchError: "Failed to send a request to the Edge Function"
+   - Error occurs when trying to invoke the chatgpt_reply function
+   - Client-side error suggesting connection/deployment issue
+
+2. **Potential Causes**:
+   - Edge Function not properly deployed
+   - CORS configuration issues
+   - Authentication token issues
+   - Function URL misconfiguration
+   - Rate limiting or timeout
+
+3. **Debugging Steps**:
+   a. Verify Edge Function Deployment:
+      - Check if function is deployed to Supabase
+      - Verify function URL is correct
+      - Test function directly via Supabase dashboard
+   
+   b. Check Authentication:
+      - Verify session token is being passed
+      - Check CORS headers configuration
+      - Validate auth in Edge Function
+   
+   c. Review Function Configuration:
+      - Verify environment variables (OPENAI_API_KEY)
+      - Check function timeout settings
+      - Validate CORS setup
+
+4. **Next Steps**:
+   - Deploy Edge Function with proper configuration
+   - Test function directly via Supabase dashboard
+   - Monitor function logs for errors
+   - Verify authentication flow
+
+### Future Considerations
+1. **Error Handling**:
+   - Add error rate monitoring
+   - Implement circuit breakers
+   - Add error reporting to external service
+   - Create error type catalog
+
+2. **Monitoring**:
+   - Add performance metrics
+   - Track error frequencies
+   - Monitor API key usage
+   - Log request/response times
+
+3. **Development Process**:
+   - Create error simulation tests
+   - Document all error types
+   - Add error handling guidelines
    - Create debugging playbook 

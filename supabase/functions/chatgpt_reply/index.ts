@@ -222,12 +222,12 @@ serve(async (req) => {
 
     try {
       console.log('Sending request to OpenAI:', {
-        model: "gpt-4o-mini-2024-07-18",
+        model: "gpt-4o-mini",
         message: user_message
       })
 
       const completion = await openai.createChatCompletion({
-        model: "gpt-4o-mini-2024-07-18",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",

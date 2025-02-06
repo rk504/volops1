@@ -55,16 +55,33 @@ export default function Chatbot() {
         throw new Error('No active session')
       }
 
-      // Call the Supabase Edge Function with auth header
-      const { data, error } = await supabase.functions.invoke('chatgpt_reply', {
-        body: { user_message: input },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
+      // Add timeout to the function call
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timed out')), 10000)
+      })
+
+      const { data, error } = await Promise.race([
+        supabase.functions.invoke('chatgpt_reply', {
+          body: { user_message: input },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json'
+          }
+        }),
+        timeoutPromise
+      ])
+
+      // Log the complete response for debugging
+      console.log('Supabase Edge Function request details:', {
+        url: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/chatgpt_reply`,
+        hasSession: !!session,
+        hasAccessToken: !!session?.access_token,
+        requestHeaders: {
+          Authorization: session?.access_token ? 'Bearer [redacted]' : 'none',
           'Content-Type': 'application/json'
         }
       })
 
-      // Log the complete response for debugging
       console.log('Supabase Edge Function response:', {
         data: data ? JSON.stringify(data, null, 2) : null,
         error: error ? {
@@ -79,6 +96,12 @@ export default function Chatbot() {
         // Check for specific error types
         if (error.message.includes('401') || error.message.includes('authorization')) {
           throw new Error('Authentication error - please sign in')
+        }
+        if (error.message.includes('Failed to send')) {
+          throw new Error('Unable to reach the chatbot service. Please try again later.')
+        }
+        if (error.message.includes('timeout')) {
+          throw new Error('The request took too long. Please try again.')
         }
         throw error
       }
@@ -112,6 +135,16 @@ export default function Chatbot() {
 
       setMessages(prev => [...prev, botResponse])
     } catch (error: any) {
+      // Handle timeout and network errors
+      if (error.message === 'Request timed out') {
+        toast({
+          title: "Request Timeout",
+          description: "The request took too long. Please try again.",
+          variant: "destructive"
+        })
+        return
+      }
+
       // Detailed error logging
       console.error('Chat error details:', {
         name: error.name,
