@@ -126,7 +126,7 @@ export default function Home() {
             onCategoryChange={(category, checked) => updateFilters('categories', category, checked)}
             onAvailabilityChange={(time, checked) => updateFilters('availability', time, checked)}
           />
-          <main className="flex-1 flex overflow-y-auto">
+          <main className="flex-1 flex flex-col md:flex-row overflow-y-auto">
             <div className="flex-1 flex flex-col">
               <OpportunityList 
                 opportunities={filteredOpportunities} 
@@ -134,7 +134,7 @@ export default function Home() {
               />
               <EmailSignup />
             </div>
-            <div className="w-1/4 h-[calc(100vh-8rem)] mt-8 mr-6 pl-2">
+            <div className="w-full md:w-1/4 h-64 md:h-[calc(100vh-8rem)] mt-4 md:mt-8 mx-4 md:mr-6">
               <div className="relative h-full">
                 <Suspense fallback={<div className="w-full h-full flex items-center justify-center">Loading map...</div>}>
                   <Map opportunities={filteredOpportunities} />

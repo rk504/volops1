@@ -1,4 +1,8 @@
 import { Checkbox } from '@/components/ui/checkbox'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { useState, useEffect } from 'react'
+import { Filter } from 'lucide-react'
 
 interface SidebarProps {
   filters: {
@@ -14,10 +18,22 @@ export default function Sidebar({
   onCategoryChange, 
   onAvailabilityChange
 }: SidebarProps) {
-  return (
-    <aside className="w-64 bg-white border-r border-gray-200 p-6 overflow-y-auto">
-      <h2 className="text-lg font-semibold mb-4">Filters</h2>
+  const [isMobile, setIsMobile] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
 
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  const FilterContent = () => (
+    <>
       <div className="mb-6">
         <h3 className="text-sm font-medium mb-2">Categories</h3>
         <div className="space-y-2">
@@ -49,6 +65,37 @@ export default function Sidebar({
           ))}
         </div>
       </div>
+    </>
+  )
+
+  if (isMobile) {
+    return (
+      <>
+        <Button
+          variant="outline"
+          className="fixed bottom-4 left-4 z-50 flex items-center gap-2"
+          onClick={() => setIsOpen(true)}
+        >
+          <Filter className="w-4 h-4" />
+          Filters
+        </Button>
+        
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Filters</DialogTitle>
+            </DialogHeader>
+            <FilterContent />
+          </DialogContent>
+        </Dialog>
+      </>
+    )
+  }
+
+  return (
+    <aside className="hidden md:block w-64 bg-white border-r border-gray-200 p-6 overflow-y-auto">
+      <h2 className="text-lg font-semibold mb-4">Filters</h2>
+      <FilterContent />
     </aside>
   )
 }
